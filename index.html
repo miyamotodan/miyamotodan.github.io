@@ -8,64 +8,43 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-            text-align: center;
-        }
-        header {
-            background-color: #0073e6;
-            color: white;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        main {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        footer {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #0073e6;
-            color: white;
-        }
-        a {
-            color: white;
-            text-decoration: none;
-        }
-    </style>
+    <!-- Aggiungi Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <header>
+    <header class="text-center my-4">
         <h1>Benvenuto nella Mia Pagina</h1>
         <p>Esplora il mio mondo digitale.</p>
     </header>
-    <main>
-        <section class="intro">
+    <main class="container">
+        <section class="intro my-5">
             <h2>Chi Sono</h2>
             <p>Breve introduzione su di te e il tuo lavoro.</p>
         </section>
-        <section class="projects">
+        <section class="projects my-5">
             <h2>I Miei Progetti</h2>
             <p>Scopri alcuni dei miei progetti su GitHub.</p>
-
-            //elenco di links per sottocartelle
-            <ul>
-                <li><a href="progetti/imgmeasure">IMG Measure</a></li>
-            </ul>
-
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">IMG Measure</h5>
+                            <p class="card-text">Tool per la misurazione delle distanze in una immagine per riportarle su carta in scala</p>
+                            <a href="https://github.com/miyamotodan/imgmeasure" class="btn btn-primary" target="_blank">Vai al progetto</a>
+                            <a href="progetti/imgmeasure" class="btn btn-info">esegui</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Aggiungi altri box per i progetti qui -->
+            </div>
         </section>
     </main>
-    <footer>
-        <p>&copy; 2025 Il Mio Nome - <a href="https://github.com/tuo-username">GitHub</a></p>
+    <footer class="text-center my-4">
+        <p>&copy; 2025 miyamotodan - <a href="https://github.com/miyamotodan">GitHub</a></p>
     </footer>
+    <!-- Aggiungi Bootstrap JS e dipendenze -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

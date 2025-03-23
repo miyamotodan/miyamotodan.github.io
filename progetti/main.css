@@ -1,0 +1,21 @@
+#canvas {
+    border: 1px solid #777;
+    background: #eee;
+    scroll-behavior: auto;
+    margin-top: 25px;
+}
+
+.container {
+    display: flex;
+}
+
+.left-panel {
+    flex: 1;
+    text-align: center;
+}
+
+.right-panel {
+    flex: 1;
+    text-align: center;
+}
+
