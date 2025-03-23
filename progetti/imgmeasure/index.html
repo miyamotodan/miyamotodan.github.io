@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misuratore di Distanze</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row">
+                    <div class="row">&nbsp;</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <input type="file" id="upload" accept="image/*" class="w-100">
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted">Immagine da copiare sul foglio da disegno.</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="row">&nbsp;</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-3">
+                        <label for="scale">Scala px</label>
+                    </div>
+                    <div class="col-sm-3">
+                        <input type="number" id="scale" value="1" class="w-100">
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted">Inserire la lunghezza in px del segmento da prendere come riferimento (selected=1).</small>
+                    </div>
+                </div>
+
+                <div class="row" mb-3>
+                    <div class="col-sm-3">
+                        <label for="scale">Reale</label>
+                    </div>
+                    <div class="col-sm-3">
+                        <input type="number" id="real" value="1" class="w-100">
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted">Lunghezza (mm/cm) del segmento di rifermento sul foglio da disegno.</small>
+                    </div>
+                </div>
+
+                <div class="row" mb-3>
+                    <div class="col-sm-3">
+                        <label for="scale">selected</label>
+                    </div>
+                    <div class="col-sm-3">
+                        <input type="number" id="realsel" value="" disabled class="w-100">
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted">Lunghezza calcolata del segmento selezionato da riportare sul foglio da disegno.</small>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="row">&nbsp;</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <button id="delete" type="button" class="btn btn-warning m-1">Elimina il segmento &nbsp</button>
+                    </div>
+                    <div class="col-md-4">
+                        &nbsp;
+                    </div>
+                    <div class="col-md-4">
+                        <button id="deleteall" type="button" class="btn btn-warning m-1">Elimina tutti i
+                            segmenti</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="row">&nbsp;</div>
+                </div>
+
+                <!-- Sezione con layout dei pulsanti di controllo -->
+                <div class="row justify-content-center">
+                    <!-- Pulsante Y+ sopra -->
+                    <div class="col-2 d-flex flex-column align-items-center">
+                        <button id="yminus" type="button" class="btn btn-info m-1">Y-</button>
+                    </div>
+                </div>
+
+                <div class="row justify-content-center align-items-center">
+                    <!-- Pulsante X- a sinistra -->
+                    <div class="col-4 text-center">
+                        <button id="xminus" type="button" class="btn btn-primary m-1">X-</button>
+                    </div>
+
+                    <!-- Pulsante centrale -->
+                    <div class="col-4 text-center">
+                        <button id="reset" type="button" class="btn btn-secondary m-1">&nbsp;C&nbsp;</button>
+                    </div>
+
+                    <!-- Pulsante X+ a destra -->
+                    <div class="col-4 text-center">
+                        <button id="xplus" type="button" class="btn btn-primary m-0">X+</button>
+                    </div>
+                </div>
+
+                <!-- Pulsante Y- sotto -->
+                <div class="row justify-content-center">
+                    <div class="col-2 d-flex flex-column align-items-center">
+                        <button id="yplus" type="button" class="btn btn-info m-1">Y+</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <button id="zoom-out" type="button" class="btn btn-secondary m-1">Zoom -</button>
+                    </div>
+
+                    <div class="col-md-4">
+                        &nbsp;
+                    </div>
+
+                    <div class="col-md-4">
+                        <button id="zoom-in" type="button" class="btn btn-secondary m-1">Zoom +</button>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="col-md-6">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="distance"></div>
+
+    <script src="bootstrap.bundle.min.js"></script>
+    <script src="main.js"></script>
+
+</body>
+
+</html>
