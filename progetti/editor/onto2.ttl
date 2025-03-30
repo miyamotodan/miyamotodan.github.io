@@ -1,0 +1,624 @@
+@prefix : <http://localhost:8080/Eproc#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ocm2: <http://www.external.it/ocm2#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@base <http://localhost:8080/Eproc#> .
+
+<http://localhost:8080/Eproc> rdf:type owl:Ontology ;
+                               owl:versionIRI <http://localhost:8080/1.0> .
+
+#################################################################
+#    Annotation properties
+#################################################################
+
+###  http://www.external.it/ocm2#descrizione_breve
+ocm2:descrizione_breve rdf:type owl:AnnotationProperty .
+
+
+###  http://www.external.it/ocm2#status
+ocm2:status rdf:type owl:AnnotationProperty .
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://localhost:8080/Eproc#AffidamentoDiretto_conforme_con_Art.36comma2aDLgs18042016
+:AffidamentoDiretto_conforme_con_Art.36comma2aDLgs18042016 rdf:type owl:ObjectProperty ;
+                                                           rdfs:domain <http://localhost:8080/Processi#Affidamento_Diretto> ;
+                                                           rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.36_comma_2a_DLgs_18_04_2016> .
+
+
+###  http://localhost:8080/Eproc#Art.26legge23dicembre1999n.488_regola_Eproc_ConvenzioniQuadro
+:Art.26legge23dicembre1999n.488_regola_Eproc_ConvenzioniQuadro rdf:type owl:ObjectProperty ;
+                                                               rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.26_legge_23_dicembre_1999_n.488> ;
+                                                               rdfs:range :Convenzioni_Quadro .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1aDLgs18042016_definisce_StruttureOrganizzative_AmministrazioniAggiudicatrici
+:Art.3comma1aDLgs18042016_definisce_StruttureOrganizzative_AmministrazioniAggiudicatrici rdf:type owl:ObjectProperty ;
+                                                                                         rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1a_DLgs_18_04_2016> ;
+                                                                                         rdfs:range <http://localhost:8080/StruttureOrganizzative#Amministrazioni_Aggiudicatrici> .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1eDLgs18042016_definisce_StruttureOrganizzative_EntiAggiudicatori
+:Art.3comma1eDLgs18042016_definisce_StruttureOrganizzative_EntiAggiudicatori rdf:type owl:ObjectProperty ;
+                                                                             rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1e_DLgs_18_04_2016> ;
+                                                                             rdfs:range <http://localhost:8080/StruttureOrganizzative#Enti_Aggiudicatori> .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1fDLgs18042016_definisce_StruttureOrganizzative_SoggettiAggiudicatori
+:Art.3comma1fDLgs18042016_definisce_StruttureOrganizzative_SoggettiAggiudicatori rdf:type owl:ObjectProperty ;
+                                                                                 rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1f_DLgs_18_04_2016> ;
+                                                                                 rdfs:range <http://localhost:8080/StruttureOrganizzative#Soggetti_Aggiudicatori> .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1gDLgs18042016_definisce_StruttureOrganizzative_AltriSoggettiAggiudicatori
+:Art.3comma1gDLgs18042016_definisce_StruttureOrganizzative_AltriSoggettiAggiudicatori rdf:type owl:ObjectProperty ;
+                                                                                      rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1g_DLgs_18_04_2016> ;
+                                                                                      rdfs:range <http://localhost:8080/StruttureOrganizzative#Altri_Soggetti_Aggiudicatori> .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1oDLgs18042016_definisce_StruttureOrganizzative_StazioneAppaltanteconqualifica
+:Art.3comma1oDLgs18042016_definisce_StruttureOrganizzative_StazioneAppaltanteconqualifica rdf:type owl:ObjectProperty ;
+                                                                                          rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1o_DLgs_18_04_2016> ;
+                                                                                          rdfs:range <http://localhost:8080/StruttureOrganizzative#Stazione_Appaltante_con_qualifica> .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1sssDLgs18042016_definisce_Processi_ProceduraAperta
+:Art.3comma1sssDLgs18042016_definisce_Processi_ProceduraAperta rdf:type owl:ObjectProperty ;
+                                                               rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1sss_DLgs_18_04_2016> ;
+                                                               rdfs:range <http://localhost:8080/Processi#Procedura_Aperta> .
+
+
+###  http://localhost:8080/Eproc#Art.3comma1uuuDLgs18042016_definisce_Processi_ProceduraNegoziata
+:Art.3comma1uuuDLgs18042016_definisce_Processi_ProceduraNegoziata rdf:type owl:ObjectProperty ;
+                                                                  rdfs:domain <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1uuu_DLgs_18_04_2016> ;
+                                                                  rdfs:range <http://localhost:8080/Processi#Procedura_Negoziata> .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_ha_CategoriaMerceologica
+:Bandodigara_ha_CategoriaMerceologica rdf:type owl:ObjectProperty ;
+                                      rdfs:domain :Bando_di_gara ;
+                                      rdfs:range <http://localhost:8080/ContrattiPubblici#Categoria_Merceologica> .
+
+
+###  http://localhost:8080/Eproc#Contratto_si_riferiscono_a_ContrattoQuadro
+:Contratto_si_riferiscono_a_ContrattoQuadro rdf:type owl:ObjectProperty ;
+                                            rdfs:domain <http://localhost:8080/ContrattiPubblici#Contratto> ;
+                                            rdfs:range :Contratto_Quadro .
+
+
+###  http://localhost:8080/Eproc#DialogoCompetitivo_conforme_con_Art.3comma1vvvDLgs18042016
+:DialogoCompetitivo_conforme_con_Art.3comma1vvvDLgs18042016 rdf:type owl:ObjectProperty ;
+                                                            rdfs:domain <http://localhost:8080/Processi#Dialogo_Competitivo> ;
+                                                            rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1vvv_DLgs_18_04_2016> .
+
+
+###  http://localhost:8080/Eproc#DisciplinarediGara_integra_Bandodigara
+:DisciplinarediGara_integra_Bandodigara rdf:type owl:ObjectProperty ;
+                                        rdfs:domain :Disciplinare_di_Gara ;
+                                        rdfs:range :Bando_di_gara .
+
+
+###  http://localhost:8080/Eproc#Iniziativa_ha_CategoriaMerceologica
+:Iniziativa_ha_CategoriaMerceologica rdf:type owl:ObjectProperty ;
+                                     rdfs:domain <http://localhost:8080/ContrattiPubblici#Iniziativa> ;
+                                     rdfs:range <http://localhost:8080/ContrattiPubblici#Categoria_Merceologica> .
+
+
+###  http://localhost:8080/Eproc#Iniziativa_richiede_avvio_Proceduradiaffidamento
+:Iniziativa_richiede_avvio_Proceduradiaffidamento rdf:type owl:ObjectProperty ;
+                                                  rdfs:domain <http://localhost:8080/ContrattiPubblici#Iniziativa> ;
+                                                  rdfs:range <http://localhost:8080/Processi#Procedura_di_affidamento> .
+
+
+###  http://localhost:8080/Eproc#PiattaformaTelematica_mette_a_disposizione_Funzionalitaperlacquisto
+:PiattaformaTelematica_mette_a_disposizione_Funzionalitaperlacquisto rdf:type owl:ObjectProperty ;
+                                                                     rdfs:domain :Piattaforma_Telematica ;
+                                                                     rdfs:range :Funzionalita_per_l_acquisto .
+
+
+###  http://localhost:8080/Eproc#ProceduraNegoziata_conforme_con_Art.36comma2bDLgs18042016
+:ProceduraNegoziata_conforme_con_Art.36comma2bDLgs18042016 rdf:type owl:ObjectProperty ;
+                                                           rdfs:domain <http://localhost:8080/Processi#Procedura_Negoziata> ;
+                                                           rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.36_comma_2b_DLgs_18_04_2016> .
+
+
+###  http://localhost:8080/Eproc#ProceduraRistretta_conforme_con_Art.3comma1tttDLgs18042016
+:ProceduraRistretta_conforme_con_Art.3comma1tttDLgs18042016 rdf:type owl:ObjectProperty ;
+                                                            rdfs:domain <http://localhost:8080/Processi#Procedura_Ristretta> ;
+                                                            rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1ttt_DLgs_18_04_2016> .
+
+
+###  http://localhost:8080/Eproc#Proceduradiaffidamento_conforme_con_Art.32DLgs18042016
+:Proceduradiaffidamento_conforme_con_Art.32DLgs18042016 rdf:type owl:ObjectProperty ;
+                                                        rdfs:domain <http://localhost:8080/Processi#Procedura_di_affidamento> ;
+                                                        rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.32_DLgs_18_04_2016> .
+
+
+###  http://localhost:8080/Eproc#Proceduradiaffidamento_determina_OperatoreEconomicoAggiudicatario
+:Proceduradiaffidamento_determina_OperatoreEconomicoAggiudicatario rdf:type owl:ObjectProperty ;
+                                                                   rdfs:domain <http://localhost:8080/Processi#Procedura_di_affidamento> ;
+                                                                   rdfs:range <http://localhost:8080/StruttureOrganizzative#Operatore_Economico_Aggiudicatario> .
+
+
+###  http://localhost:8080/Eproc#Proceduradiaffidamento_implementata_con_Strumento
+:Proceduradiaffidamento_implementata_con_Strumento rdf:type owl:ObjectProperty .
+
+
+###  http://localhost:8080/Eproc#Proceduradiaffidamento_indetta_tramite_Bando
+:Proceduradiaffidamento_indetta_tramite_Bando rdf:type owl:ObjectProperty .
+
+
+###  http://localhost:8080/Eproc#Responsabileunicodelprocedimento_responsabile_di_Proceduradiaffidamento
+:Responsabileunicodelprocedimento_responsabile_di_Proceduradiaffidamento rdf:type owl:ObjectProperty .
+
+
+###  http://localhost:8080/Eproc#SoggettoAggregatore_Programma_Iniziativa
+:SoggettoAggregatore_Programma_Iniziativa rdf:type owl:ObjectProperty ;
+                                          rdfs:domain <http://localhost:8080/StruttureOrganizzative#Soggetto_Aggregatore> ;
+                                          rdfs:range <http://localhost:8080/ContrattiPubblici#Iniziativa> .
+
+
+###  http://localhost:8080/Eproc#StazioneAppaltanteconqualifica_stipula_ContrattoQuadro
+:StazioneAppaltanteconqualifica_stipula_ContrattoQuadro rdf:type owl:ObjectProperty ;
+                                                        rdfs:domain <http://localhost:8080/StruttureOrganizzative#Stazione_Appaltante_con_qualifica> ;
+                                                        rdfs:range :Contratto_Quadro .
+
+
+###  http://localhost:8080/Eproc#Strumento_richiedono_utilizzo_PiattaformaTelematica
+:Strumento_richiedono_utilizzo_PiattaformaTelematica rdf:type owl:ObjectProperty ;
+                                                     rdfs:domain <http://localhost:8080/ContrattiPubblici#Strumento> ;
+                                                     rdfs:range :Piattaforma_Telematica .
+
+
+###  http://localhost:8080/Eproc#StrumentodiAcquisto_definiti_da_Art.3comma1ccccDLgs18042016
+:StrumentodiAcquisto_definiti_da_Art.3comma1ccccDLgs18042016 rdf:type owl:ObjectProperty ;
+                                                             rdfs:domain :Strumento_di_Acquisto ;
+                                                             rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1_cccc_DLgs_18_04_2016> .
+
+
+###  http://localhost:8080/Eproc#StrumentodiNegoziazione_definito_da_Art.3comma1ddddDLgs18042016
+:StrumentodiNegoziazione_definito_da_Art.3comma1ddddDLgs18042016 rdf:type owl:ObjectProperty ;
+                                                                 rdfs:domain :Strumento_di_Negoziazione ;
+                                                                 rdfs:range <http://localhost:8080/RiferimentiNormativi#Art.3_comma_1_dddd_DLgs_18_04_2016> .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  http://localhost:8080/Eproc#Bandodigara_Criterio_di_aggiudicazione
+:Bandodigara_Criterio_di_aggiudicazione rdf:type owl:DatatypeProperty ;
+                                        rdfs:domain :Bando_di_gara ;
+                                        ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Data_di_Scadenza
+:Bandodigara_Data_di_Scadenza rdf:type owl:DatatypeProperty ;
+                              rdfs:domain :Bando_di_gara .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Data_di_pubblicazione
+:Bandodigara_Data_di_pubblicazione rdf:type owl:DatatypeProperty ;
+                                   rdfs:domain :Bando_di_gara ;
+                                   ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Descrizione_Appalto
+:Bandodigara_Descrizione_Appalto rdf:type owl:DatatypeProperty ;
+                                 rdfs:domain :Bando_di_gara ;
+                                 ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Destinatario
+:Bandodigara_Destinatario rdf:type owl:DatatypeProperty ;
+                          rdfs:domain :Bando_di_gara ;
+                          ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Termine_Richiesta_Chiarimenti
+:Bandodigara_Termine_Richiesta_Chiarimenti rdf:type owl:DatatypeProperty ;
+                                           rdfs:domain :Bando_di_gara ;
+                                           ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Termine_ricezione_offerte
+:Bandodigara_Termine_ricezione_offerte rdf:type owl:DatatypeProperty ;
+                                       rdfs:domain :Bando_di_gara ;
+                                       ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Tipo_Amministrazione_Aggiudicatrice
+:Bandodigara_Tipo_Amministrazione_Aggiudicatrice rdf:type owl:DatatypeProperty ;
+                                                 rdfs:domain :Bando_di_gara ;
+                                                 ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bandodigara_Valore_Stimato_Appalto
+:Bandodigara_Valore_Stimato_Appalto rdf:type owl:DatatypeProperty ;
+                                    rdfs:domain :Bando_di_gara ;
+                                    ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#ProceduraNegoziata_Numero_di_Operatori_Economici
+:ProceduraNegoziata_Numero_di_Operatori_Economici rdf:type owl:DatatypeProperty ;
+                                                  rdfs:domain <http://localhost:8080/Processi#Procedura_Negoziata> ;
+                                                  ocm2:status "Draft" ;
+                                                  rdfs:comment "Identifica il numero di operatori economici che sono previsti per la procedura negoziata." .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://localhost:8080/ContrattiPubblici#Categoria_Merceologica
+<http://localhost:8080/ContrattiPubblici#Categoria_Merceologica> rdf:type owl:Class ;
+                                                                 owl:equivalentClass [ rdf:type owl:Class ;
+                                                                                       owl:unionOf ( <http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_DPCM>
+                                                                                                     <http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_No_DPCM>
+                                                                                                   )
+                                                                                     ] .
+
+
+###  http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_DPCM
+<http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_DPCM> rdf:type owl:Class ;
+                                                                      owl:disjointWith <http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_No_DPCM> .
+
+
+###  http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_No_DPCM
+<http://localhost:8080/ContrattiPubblici#Categoria_Merceologica_No_DPCM> rdf:type owl:Class .
+
+
+###  http://localhost:8080/ContrattiPubblici#Contratto
+<http://localhost:8080/ContrattiPubblici#Contratto> rdf:type owl:Class .
+
+
+###  http://localhost:8080/ContrattiPubblici#Iniziativa
+<http://localhost:8080/ContrattiPubblici#Iniziativa> rdf:type owl:Class .
+
+
+###  http://localhost:8080/ContrattiPubblici#Strumento
+<http://localhost:8080/ContrattiPubblici#Strumento> rdf:type owl:Class .
+
+
+###  http://localhost:8080/Eproc#Avviso_di_preinformazione
+:Avviso_di_preinformazione rdf:type owl:Class ;
+                           rdfs:subClassOf :Bando ;
+                           ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bando
+:Bando rdf:type owl:Class ;
+       ocm2:status "Draft" ;
+       rdfs:comment "Un atto amministrativo con il quale si avvia la procedura di affidamento." .
+
+
+###  http://localhost:8080/Eproc#Bando_abilitazione_MEPA
+:Bando_abilitazione_MEPA rdf:type owl:Class ;
+                         rdfs:subClassOf :Bando ;
+                         ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Bando_di_gara
+:Bando_di_gara rdf:type owl:Class ;
+               rdfs:subClassOf :Bando ;
+               ocm2:status "Draft" ;
+               rdfs:comment "Il bando di gara e un atto attraverso cui la stazione appaltante rende nota l'intenzione di aggiudicare un appalto pubblico o un accordo quadro." .
+
+
+###  http://localhost:8080/Eproc#Bando_istitutivo_sdapa
+:Bando_istitutivo_sdapa rdf:type owl:Class ;
+                        rdfs:subClassOf :Bando ;
+                        ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Contratto_Quadro
+:Contratto_Quadro rdf:type owl:Class ;
+                  owl:equivalentClass [ rdf:type owl:Class ;
+                                        owl:unionOf ( :Contratto_Quadro_Completo
+                                                      :Contratto_Quadro_Incompleto
+                                                    )
+                                      ] ;
+                  ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Contratto_Quadro_Completo
+:Contratto_Quadro_Completo rdf:type owl:Class ;
+                           ocm2:status "Draft" ;
+                           rdfs:comment "E un contratto quadro in cui sono gia state definite tutte le condizioni di acquisto e per il quale non e necessaria la riapertura del confronto competitivo ( Es. le convezioni quadro)." .
+
+
+###  http://localhost:8080/Eproc#Contratto_Quadro_Incompleto
+:Contratto_Quadro_Incompleto rdf:type owl:Class ;
+                             ocm2:status "Draft" ;
+                             rdfs:comment "E un contratto quadro in cui non sono state definite tutte le condizioni di acquisto e per il quale e necessaria la riapertura del confronto competitivo per l'aggiudicazione di appalti specifici." .
+
+
+###  http://localhost:8080/Eproc#Convenzioni_Quadro
+:Convenzioni_Quadro rdf:type owl:Class ;
+                    rdfs:subClassOf :Contratto_Quadro_Completo ;
+                    ocm2:status "Draft" ;
+                    rdfs:comment "Le convenzioni ex art. 26 sono state introdotte nel nostro ordinamento allo scopo di fornire a Consip Spa uno strumento giuridico per la stipula di contratti in cui l impresa prescelta si impegnava ad accettare ordinativi di fornitura di beni e servizi, alle condizioni e ai prezzi stabiliti in gara, fino al raggiungimento del limite massimo previsto (il cd. massimale). I beni e servizi acquisiti dalle amministrazioni hanno la caratteristica di elevata standardizzazione e il loro acquisto si presuppone di solito per volumi o importi elevati. La convenzione-quadro un accordo-quadro nei confronti di 1 solo operatore economico e  puo  essere stipulata solo dai Soggetti Aggregatori." .
+
+
+###  http://localhost:8080/Eproc#Disciplinare_di_Gara
+:Disciplinare_di_Gara rdf:type owl:Class ;
+                      ocm2:status "Draft" .
+
+
+###  http://localhost:8080/Eproc#Funzionalita_per_l_acquisto
+:Funzionalita_per_l_acquisto rdf:type owl:Class ;
+                             ocm2:status "Draft" ;
+                             rdfs:comment "Sono le funzionalita  messe a disposizione dalla piattaforma telematica per l'acquisto come l'Ordine diretto di Acquisto, la Richiesta di Offerta e la trattativa diretta." .
+
+
+###  http://localhost:8080/Eproc#MisuraNuovaInvitalia
+:MisuraNuovaInvitalia rdf:type owl:Class ;
+                      ocm2:descrizione_breve "descizione breve" ;
+                      rdfs:comment "descizione lunga" .
+
+
+###  http://localhost:8080/Eproc#Piattaforma_Telematica
+:Piattaforma_Telematica rdf:type owl:Class ;
+                        ocm2:status "Draft" ;
+                        rdfs:comment "E la piattaforma utilizzata per l'esecuzione della procedura di affidamento. In questa definizione rientrano as es. AcquistinretePA , Sistemi per le gare elettroniche, etc." .
+
+
+###  http://localhost:8080/Eproc#Strumento_di_Acquisto
+:Strumento_di_Acquisto rdf:type owl:Class ;
+                       rdfs:subClassOf <http://localhost:8080/ContrattiPubblici#Strumento> ;
+                       ocm2:status "Draft" ;
+                       rdfs:comment """Sono gli strumenti di acquisizione che non richiedono apertura del confronto competitivo. Rientrano tra gli strumenti di acquisto:
+
+
+1) le convenzioni quadro di cui all articolo 26 della legge 23 dicembre 1999, n. 488, stipulate, ai sensi della normativa vigente, da CONSIP S.p.A. e dai soggetti aggregatori;
+
+
+2) gli accordi quadro stipulati da centrali di committenza quando gli appalti specifici vengono aggiudicati senza riapertura del confronto competitivo;
+
+
+3) il mercato elettronico realizzato da centrale di committenza nel caso di acquisti effettuati a catalogo;""" .
+
+
+###  http://localhost:8080/Eproc#Strumento_di_Negoziazione
+:Strumento_di_Negoziazione rdf:type owl:Class ;
+                           rdfs:subClassOf <http://localhost:8080/ContrattiPubblici#Strumento> ;
+                           ocm2:status "Draft" ;
+                           rdfs:comment """Sono gli strumenti di acquisizione che richiedono apertura del confronto competitivo. Rientrano tra gli strumenti di negoziazione:
+
+
+1) gli accordi quadro stipulati da centrali di committenza nel caso in cui gli appalti specifici vengono aggiudicati con riapertura del confronto competitivo;
+
+
+2) il sistema dinamico di acquisizione realizzato da centrali di committenza;
+
+
+3) il mercato elettronico realizzato da centrali di committenza nel caso di acquisti effettuati attraverso confronto concorrenziale;
+
+
+""" .
+
+
+###  http://localhost:8080/Eproc#Strumento_di_Contrattazione(Contrattuale)
+<http://localhost:8080/Eproc#Strumento_di_Contrattazione(Contrattuale)> rdf:type owl:Class ;
+                                                                        rdfs:subClassOf <http://localhost:8080/ContrattiPubblici#Strumento> ;
+                                                                        ocm2:status "Draft" ;
+                                                                        rdfs:comment "Sono gli strumenti a disposizione delle stazioni appaltanti per la stipula di Contratti Quadro, che include Accordi Qaudro e Convenzioni, con uno o piu operatori economici." .
+
+
+###  http://localhost:8080/Processi#Affidamento_Diretto
+<http://localhost:8080/Processi#Affidamento_Diretto> rdf:type owl:Class .
+
+
+###  http://localhost:8080/Processi#Dialogo_Competitivo
+<http://localhost:8080/Processi#Dialogo_Competitivo> rdf:type owl:Class .
+
+
+###  http://localhost:8080/Processi#Procedura_Aperta
+<http://localhost:8080/Processi#Procedura_Aperta> rdf:type owl:Class .
+
+
+###  http://localhost:8080/Processi#Procedura_Negoziata
+<http://localhost:8080/Processi#Procedura_Negoziata> rdf:type owl:Class .
+
+
+###  http://localhost:8080/Processi#Procedura_Ristretta
+<http://localhost:8080/Processi#Procedura_Ristretta> rdf:type owl:Class .
+
+
+###  http://localhost:8080/Processi#Procedura_di_affidamento
+<http://localhost:8080/Processi#Procedura_di_affidamento> rdf:type owl:Class ;
+                                                          owl:equivalentClass [ rdf:type owl:Class ;
+                                                                                owl:unionOf ( <http://localhost:8080/Processi#Affidamento_Diretto>
+                                                                                              <http://localhost:8080/Processi#Dialogo_Competitivo>
+                                                                                              <http://localhost:8080/Processi#Procedura_Aperta>
+                                                                                              <http://localhost:8080/Processi#Procedura_Negoziata>
+                                                                                              <http://localhost:8080/Processi#Procedura_Ristretta>
+                                                                                            )
+                                                                              ] .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.26_legge_23_dicembre_1999_n.488
+<http://localhost:8080/RiferimentiNormativi#Art.26_legge_23_dicembre_1999_n.488> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.32_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.32_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.36_comma_2a_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.36_comma_2a_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.36_comma_2b_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.36_comma_2b_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1_cccc_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1_cccc_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1_dddd_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1_dddd_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1a_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1a_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1e_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1e_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1f_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1f_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1g_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1g_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1o_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1o_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1sss_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1sss_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1ttt_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1ttt_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1uuu_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1uuu_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/RiferimentiNormativi#Art.3_comma_1vvv_DLgs_18_04_2016
+<http://localhost:8080/RiferimentiNormativi#Art.3_comma_1vvv_DLgs_18_04_2016> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Altri_Soggetti_Aggiudicatori
+<http://localhost:8080/StruttureOrganizzative#Altri_Soggetti_Aggiudicatori> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Amministrazioni_Aggiudicatrici
+<http://localhost:8080/StruttureOrganizzative#Amministrazioni_Aggiudicatrici> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Centrale_di_Committenza
+<http://localhost:8080/StruttureOrganizzative#Centrale_di_Committenza> rdf:type owl:Class ;
+                                                                       rdfs:subClassOf <http://localhost:8080/StruttureOrganizzative#Stazione_Appaltante_con_qualifica> .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Enti_Aggiudicatori
+<http://localhost:8080/StruttureOrganizzative#Enti_Aggiudicatori> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Operatore_Economico_Aggiudicatario
+<http://localhost:8080/StruttureOrganizzative#Operatore_Economico_Aggiudicatario> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Responsabile_unico_del_procedimento
+<http://localhost:8080/StruttureOrganizzative#Responsabile_unico_del_procedimento> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Soggetti_Aggiudicatori
+<http://localhost:8080/StruttureOrganizzative#Soggetti_Aggiudicatori> rdf:type owl:Class .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Soggetto_Aggregatore
+<http://localhost:8080/StruttureOrganizzative#Soggetto_Aggregatore> rdf:type owl:Class ;
+                                                                    rdfs:subClassOf <http://localhost:8080/StruttureOrganizzative#Centrale_di_Committenza> .
+
+
+###  http://localhost:8080/StruttureOrganizzative#Stazione_Appaltante_con_qualifica
+<http://localhost:8080/StruttureOrganizzative#Stazione_Appaltante_con_qualifica> rdf:type owl:Class ;
+                                                                                 owl:equivalentClass [ rdf:type owl:Class ;
+                                                                                                       owl:unionOf ( <http://localhost:8080/StruttureOrganizzative#Altri_Soggetti_Aggiudicatori>
+                                                                                                                     <http://localhost:8080/StruttureOrganizzative#Amministrazioni_Aggiudicatrici>
+                                                                                                                     <http://localhost:8080/StruttureOrganizzative#Enti_Aggiudicatori>
+                                                                                                                     <http://localhost:8080/StruttureOrganizzative#Soggetti_Aggiudicatori>
+                                                                                                                   )
+                                                                                                     ] .
+
+
+#################################################################
+#    General axioms
+#################################################################
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty [ owl:inverseOf :Proceduradiaffidamento_implementata_con_Strumento
+                                        ] ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty [ owl:inverseOf :Proceduradiaffidamento_implementata_con_Strumento
+                                        ] ;
+                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf <http://localhost:8080/ContrattiPubblici#Strumento>
+] .
+
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty [ owl:inverseOf :Proceduradiaffidamento_indetta_tramite_Bando
+                                        ] ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty [ owl:inverseOf :Proceduradiaffidamento_indetta_tramite_Bando
+                                        ] ;
+                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf :Bando
+] .
+
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty [ owl:inverseOf :Responsabileunicodelprocedimento_responsabile_di_Proceduradiaffidamento
+                                        ] ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty [ owl:inverseOf :Responsabileunicodelprocedimento_responsabile_di_Proceduradiaffidamento
+                                        ] ;
+                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf <http://localhost:8080/Processi#Procedura_di_affidamento>
+] .
+
+
+[ rdf:type owl:Restriction ;
+  owl:onProperty :Proceduradiaffidamento_implementata_con_Strumento ;
+  owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+  rdfs:subClassOf <http://localhost:8080/Processi#Procedura_di_affidamento>
+] .
+
+
+[ rdf:type owl:Restriction ;
+  owl:onProperty :Proceduradiaffidamento_indetta_tramite_Bando ;
+  owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+  rdfs:subClassOf <http://localhost:8080/Processi#Procedura_di_affidamento>
+] .
+
+
+[ rdf:type owl:Restriction ;
+  owl:onProperty :Responsabileunicodelprocedimento_responsabile_di_Proceduradiaffidamento ;
+  owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+  rdfs:subClassOf <http://localhost:8080/StruttureOrganizzative#Responsabile_unico_del_procedimento>
+] .
+
+
+###  Generated by the OWL API (version 4.5.26.2023-07-17T20:34:13Z) https://github.com/owlcs/owlapi
