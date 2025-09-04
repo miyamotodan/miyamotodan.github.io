@@ -18,6 +18,10 @@ let scaleFactor = 1;
 let zoomFactor = 1;
 let imgX = 0;
 let imgY = 0;
+let centerX = 0;
+let centerY = 0;
+let panX = 0;
+let panY = 0;
 
 // Touch gesture variables
 let touches = [];
@@ -42,11 +46,11 @@ function loadImage(event) {
     
     img.onload = function() {
         resizeCanvas();
-        resetView();
         segments = [];
         points = [];
         selectedSegment = null;
         segmentCounter = 1;
+        zoomFactor = 1; // Reset zoom when loading new image
         drawCanvas();
         updateSegmentsList();
         showToast('Immagine caricata con successo', 'success');
@@ -57,33 +61,52 @@ function resizeCanvas() {
     const container = document.querySelector('.canvas-container');
     const containerRect = container.getBoundingClientRect();
     
-    // Ottimizzazione per differenti orientamenti e dispositivi
-    let maxCanvasWidth, maxCanvasHeight;
+    // Il canvas occupa sempre tutto lo spazio disponibile nel container
+    let canvasWidth, canvasHeight;
     
     if (window.innerWidth >= 768 && window.matchMedia("(orientation: landscape)").matches) {
         // Tablet landscape: massimizza lo spazio orizzontale
-        maxCanvasWidth = containerRect.width - 20;
-        maxCanvasHeight = containerRect.height - 20;
+        canvasWidth = containerRect.width - 20;
+        canvasHeight = containerRect.height - 20;
     } else if (window.innerWidth >= 768) {
         // Tablet portrait
-        maxCanvasWidth = containerRect.width - 30;
-        maxCanvasHeight = containerRect.height - 30;
+        canvasWidth = containerRect.width - 30;
+        canvasHeight = containerRect.height - 30;
     } else {
         // Mobile
-        maxCanvasWidth = Math.min(containerRect.width - 40, window.innerWidth - 40);
-        maxCanvasHeight = Math.min(containerRect.height - 40, window.innerHeight - 140);
+        canvasWidth = Math.min(containerRect.width - 40, window.innerWidth - 40);
+        canvasHeight = Math.min(containerRect.height - 40, window.innerHeight - 140);
     }
     
+    // Imposta sempre le dimensioni del canvas al massimo disponibile
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    
+    // Calcola il fattore di scala per centrare l'immagine nel canvas
     if (img.width && img.height) {
-        const widthRatio = maxCanvasWidth / img.width;
-        const heightRatio = maxCanvasHeight / img.height;
+        const widthRatio = canvasWidth / img.width;
+        const heightRatio = canvasHeight / img.height;
         scaleFactor = Math.min(widthRatio, heightRatio);
-
-        canvas.width = img.width * scaleFactor;
-        canvas.height = img.height * scaleFactor;
+        
+        // Calcola l'offset di centraggio
+        centerX = (canvasWidth - img.width * scaleFactor) / 2;
+        centerY = (canvasHeight - img.height * scaleFactor) / 2;
+        
+        // Reset pan when resizing
+        panX = 0;
+        panY = 0;
+        
+        // Posizione finale dell'immagine
+        imgX = centerX + panX;
+        imgY = centerY + panY;
     } else {
-        canvas.width = maxCanvasWidth;
-        canvas.height = maxCanvasHeight;
+        scaleFactor = 1;
+        centerX = 0;
+        centerY = 0;
+        panX = 0;
+        panY = 0;
+        imgX = 0;
+        imgY = 0;
     }
 }
 
@@ -95,7 +118,9 @@ function drawCanvas() {
     ctx.scale(zoomFactor, zoomFactor);
     
     // Disegna l'immagine
-    ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
+    if (img.width && img.height) {
+        ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
+    }
     
     // Disegna tutti i segmenti
     segments.forEach(segment => drawSegment(segment));
@@ -110,10 +135,21 @@ function drawCanvas() {
 }
 
 function drawSegment(segment) {
-    const startX = (segment.start.x * scaleFactor) + imgX;
-    const startY = (segment.start.y * scaleFactor) + imgY;
-    const endX = (segment.end.x * scaleFactor) + imgX;
-    const endY = (segment.end.y * scaleFactor) + imgY;
+    let startX, startY, endX, endY;
+    
+    if (img.width && img.height && scaleFactor !== 1) {
+        // Con immagine: applica scale factor e offset
+        startX = (segment.start.x * scaleFactor) + imgX;
+        startY = (segment.start.y * scaleFactor) + imgY;
+        endX = (segment.end.x * scaleFactor) + imgX;
+        endY = (segment.end.y * scaleFactor) + imgY;
+    } else {
+        // Senza immagine: applica solo offset
+        startX = segment.start.x + imgX;
+        startY = segment.start.y + imgY;
+        endX = segment.end.x + imgX;
+        endY = segment.end.y + imgY;
+    }
     
     // Linea principale
     ctx.strokeStyle = segment === selectedSegment ? 'rgba(0, 123, 255, 0.7)' : 'rgba(220, 53, 69, 0.6)';
@@ -148,8 +184,17 @@ function drawControlPoint(x, y, isSelected) {
 
 function drawTemporaryPoints() {
     points.forEach(point => {
-        const x = (point.x * scaleFactor) + imgX;
-        const y = (point.y * scaleFactor) + imgY;
+        let x, y;
+        
+        if (img.width && img.height && scaleFactor !== 1) {
+            // Con immagine: applica scale factor e offset
+            x = (point.x * scaleFactor) + imgX;
+            y = (point.y * scaleFactor) + imgY;
+        } else {
+            // Senza immagine: applica solo offset
+            x = point.x + imgX;
+            y = point.y + imgY;
+        }
         
         ctx.fillStyle = 'rgba(40, 167, 69, 0.6)';
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
@@ -260,8 +305,11 @@ function handleMouseMove(event) {
         const deltaX = event.clientX - mouseStartX;
         const deltaY = event.clientY - mouseStartY;
         
-        imgX += deltaX / zoomFactor;
-        imgY += deltaY / zoomFactor;
+        panX += deltaX / zoomFactor;
+        panY += deltaY / zoomFactor;
+        
+        imgX = centerX + panX;
+        imgY = centerY + panY;
         
         mouseStartX = event.clientX;
         mouseStartY = event.clientY;
@@ -327,8 +375,11 @@ function handleTouchMove(event) {
         
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             isPanning = true;
-            imgX += deltaX / zoomFactor;
-            imgY += deltaY / zoomFactor;
+            panX += deltaX / zoomFactor;
+            panY += deltaY / zoomFactor;
+            
+            imgX = centerX + panX;
+            imgY = centerY + panY;
             
             panStartX = touch.clientX;
             panStartY = touch.clientY;
@@ -370,13 +421,38 @@ function handleDoubleTap() {
 function getCanvasCoordinates(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     
-    // Coordinate relative al canvas
-    const canvasX = clientX - rect.left;
-    const canvasY = clientY - rect.top;
+    // 1. Coordinate relative al canvas con compensazione per CSS scaling
+    const rawCanvasX = clientX - rect.left;
+    const rawCanvasY = clientY - rect.top;
     
-    // Applica le trasformazioni inverse (zoom e pan)
-    const x = (canvasX / zoomFactor - imgX) / scaleFactor;
-    const y = (canvasY / zoomFactor - imgY) / scaleFactor;
+    // Applica il fattore di scala per convertire da coordinate CSS a coordinate canvas reali
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = rawCanvasX * scaleX;
+    const canvasY = rawCanvasY * scaleY;
+    
+    // 2. Converti in coordinate del sistema logico
+    // Il sistema logico è il sistema di coordinate prima di ctx.scale()
+    // Quindi dividiamo per zoomFactor per "annullare" il scale che verrà applicato
+    const logicalX = canvasX / zoomFactor;
+    const logicalY = canvasY / zoomFactor;
+    
+    // 3. Rimuovi l'offset dell'immagine per ottenere coordinate relative all'immagine
+    const relativeX = logicalX - imgX;
+    const relativeY = logicalY - imgY;
+    
+    // 4. Se c'è un'immagine, converti in coordinate dell'immagine originale
+    // Altrimenti usa direttamente le coordinate relative
+    let x, y;
+    if (img.width && img.height && scaleFactor !== 1) {
+        x = relativeX / scaleFactor;
+        y = relativeY / scaleFactor;
+    } else {
+        // Senza immagine o scaleFactor=1, usa coordinate relative direttamente
+        x = relativeX;
+        y = relativeY;
+    }
+    
     
     return { x, y };
 }
@@ -690,9 +766,14 @@ function updateZoomLevel() {
 }
 
 function resetView() {
-    imgX = 0;
-    imgY = 0;
     zoomFactor = 1;
+    
+    // Reset pan (ricentra l'immagine)
+    panX = 0;
+    panY = 0;
+    imgX = centerX + panX;
+    imgY = centerY + panY;
+    
     drawCanvas();
 }
 
