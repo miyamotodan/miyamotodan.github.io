@@ -55,14 +55,27 @@ function resizeCanvas() {
     const container = document.querySelector('.canvas-container');
     const containerRect = container.getBoundingClientRect();
     
-    // Calcola le dimensioni massime considerando il viewport mobile
-    const maxCanvasWidth = Math.min(containerRect.width - 40, window.innerWidth - 40);
-    const maxCanvasHeight = Math.min(containerRect.height - 40, window.innerHeight - 140);
+    // Ottimizzazione per differenti orientamenti e dispositivi
+    let maxCanvasWidth, maxCanvasHeight;
+    
+    if (window.innerWidth >= 768 && window.matchMedia("(orientation: landscape)").matches) {
+        // Tablet landscape: massimizza lo spazio orizzontale
+        maxCanvasWidth = containerRect.width - 20;
+        maxCanvasHeight = containerRect.height - 20;
+    } else if (window.innerWidth >= 768) {
+        // Tablet portrait
+        maxCanvasWidth = containerRect.width - 30;
+        maxCanvasHeight = containerRect.height - 30;
+    } else {
+        // Mobile
+        maxCanvasWidth = Math.min(containerRect.width - 40, window.innerWidth - 40);
+        maxCanvasHeight = Math.min(containerRect.height - 40, window.innerHeight - 140);
+    }
     
     if (img.width && img.height) {
         const widthRatio = maxCanvasWidth / img.width;
         const heightRatio = maxCanvasHeight / img.height;
-        scaleFactor = Math.min(widthRatio, heightRatio, 1);
+        scaleFactor = Math.min(widthRatio, heightRatio);
 
         canvas.width = img.width * scaleFactor;
         canvas.height = img.height * scaleFactor;
@@ -622,6 +635,11 @@ function zoomOut() {
 }
 
 function togglePanel() {
+    // Su desktop (1024px+), il pannello è sempre visibile
+    if (window.innerWidth >= 1024) {
+        return;
+    }
+    
     panelOpen = !panelOpen;
     controlPanel.classList.toggle('open', panelOpen);
     
@@ -690,13 +708,47 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
+    // Initialize panel state based on screen size
+    function initializePanelState() {
+        if (window.innerWidth >= 1024) {
+            // Desktop: pannello sempre aperto
+            panelOpen = true;
+            controlPanel.classList.add('open');
+            const toggleBtn = document.getElementById('toggle-panel');
+            toggleBtn.style.display = 'none'; // Nascondi il bottone su desktop
+        } else if (window.innerWidth >= 768) {
+            // Tablet: pannello chiuso di default ma toggle visibile
+            panelOpen = false;
+            controlPanel.classList.remove('open');
+            const toggleBtn = document.getElementById('toggle-panel');
+            toggleBtn.style.display = 'block';
+        } else {
+            // Mobile: pannello chiuso di default
+            panelOpen = false;
+            controlPanel.classList.remove('open');
+            const toggleBtn = document.getElementById('toggle-panel');
+            toggleBtn.style.display = 'block';
+        }
+    }
+    
     // Resize canvas on window resize
     window.addEventListener('resize', () => {
+        initializePanelState(); // Re-inizializza il pannello
         resizeCanvas();
         drawCanvas();
     });
     
+    // Listener per cambio orientamento
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            initializePanelState(); // Re-inizializza il pannello
+            resizeCanvas();
+            drawCanvas();
+        }, 100); // Piccolo delay per attendere il cambio viewport
+    });
+    
     // Initialize
+    initializePanelState();
     resizeCanvas();
     updateSegmentsList();
     showToast('Applicazione pronta. Carica un\'immagine per iniziare.', 'info');
