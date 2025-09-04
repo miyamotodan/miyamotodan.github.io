@@ -1,11 +1,13 @@
 // === VARIABILI GLOBALI ===
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const controlPanel = document.getElementById('control-panel');
 const crosshair = document.getElementById('crosshair');
 const touchIndicator = document.getElementById('touch-indicator');
 const segmentsList = document.getElementById('segments-list');
 const zoomLevel = document.getElementById('zoom-level');
+const currentMeasurement = document.getElementById('current-measurement');
+const segmentsStatus = document.getElementById('segments-status');
+const segmentsCount = document.getElementById('segments-count');
 
 let img = new Image();
 let points = [];
@@ -21,7 +23,7 @@ let imgY = 0;
 let touches = [];
 let initialDistance = 0;
 let initialZoom = 1;
-let lastTouchTime = 0;
+// let lastTouchTime = 0; // Rimossa: ora si usa lastClickTime centralizzato
 let panStartX = 0;
 let panStartY = 0;
 let isPanning = false;
@@ -196,21 +198,87 @@ canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
-function handleCanvasClick(event) {
-    if (isMultiTouch || isPanning) return;
+// Mouse events per desktop pan
+canvas.addEventListener('mousedown', handleMouseDown);
+canvas.addEventListener('mousemove', handleMouseMove);
+canvas.addEventListener('mouseup', handleMouseUp);
+canvas.addEventListener('mouseleave', handleMouseUp);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// Variabili per mouse pan
+let isMousePanning = false;
+let mouseStartX = 0;
+let mouseStartY = 0;
+
+// Variabile per prevenire eventi duplicati
+let lastClickTime = 0;
+let clickCooldown = 100; // ms
+
+// Funzione centralizzata per gestire tutti i click/tap
+function handlePointCreation(clientX, clientY) {
+    const currentTime = Date.now();
     
-    event.preventDefault();
-    const coords = getCanvasCoordinates(event.clientX, event.clientY);
+    // Prevenire eventi duplicati
+    if (currentTime - lastClickTime < clickCooldown) {
+        return false;
+    }
+    lastClickTime = currentTime;
     
-    showTouchFeedback(event.clientX, event.clientY);
+    // Verifica condizioni di blocco
+    if (isMultiTouch || isPanning || isMousePanning) {
+        return false;
+    }
     
+    const coords = getCanvasCoordinates(clientX, clientY);
+    showTouchFeedback(clientX, clientY);
+    
+    // Prova a selezionare un segmento esistente
     if (selectSegment(coords.x, coords.y)) {
         drawCanvas();
         updateSegmentsList();
-        return;
+        return true; // Evento gestito
     }
     
+    // Crea/continua la creazione di un segmento
     addPoint(coords.x, coords.y);
+    return true; // Evento gestito
+}
+
+function handleMouseDown(event) {
+    if (event.button === 2) { // Right click per pan
+        event.preventDefault();
+        isMousePanning = true;
+        mouseStartX = event.clientX;
+        mouseStartY = event.clientY;
+        canvas.style.cursor = 'move';
+    }
+}
+
+function handleMouseMove(event) {
+    if (isMousePanning) {
+        event.preventDefault();
+        const deltaX = event.clientX - mouseStartX;
+        const deltaY = event.clientY - mouseStartY;
+        
+        imgX += deltaX / zoomFactor;
+        imgY += deltaY / zoomFactor;
+        
+        mouseStartX = event.clientX;
+        mouseStartY = event.clientY;
+        drawCanvas();
+    }
+}
+
+function handleMouseUp() {
+    if (isMousePanning) {
+        isMousePanning = false;
+        canvas.style.cursor = 'crosshair';
+    }
+}
+
+function handleCanvasClick(event) {
+    event.preventDefault();
+    handlePointCreation(event.clientX, event.clientY);
 }
 
 function handleTouchStart(event) {
@@ -224,8 +292,8 @@ function handleTouchStart(event) {
         const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
         
         // Check for double tap
-        if (currentTime - lastTouchTime < 300) {
-            handleDoubleTap(touch.clientX, touch.clientY);
+        if (currentTime - lastClickTime < 300) {
+            handleDoubleTap();
             return;
         }
         
@@ -245,7 +313,7 @@ function handleTouchStart(event) {
         initialZoom = zoomFactor;
     }
     
-    lastTouchTime = currentTime;
+    // lastTouchTime = currentTime; // Non necessario, gestito da handlePointCreation
 }
 
 function handleTouchMove(event) {
@@ -283,13 +351,7 @@ function handleTouchEnd(event) {
         if (!isPanning && !isMultiTouch && touches.length === 1) {
             // Single tap without pan
             const touch = touches[0];
-            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
-            
-            showTouchFeedback(touch.clientX, touch.clientY);
-            
-            if (!selectSegment(coords.x, coords.y)) {
-                addPoint(coords.x, coords.y);
-            }
+            handlePointCreation(touch.clientX, touch.clientY);
         }
         
         isPanning = false;
@@ -299,7 +361,7 @@ function handleTouchEnd(event) {
     touches = Array.from(event.touches);
 }
 
-function handleDoubleTap(clientX, clientY) {
+function handleDoubleTap() {
     // Double tap to reset zoom
     resetView();
     showToast('Zoom reimpostato', 'info');
@@ -307,8 +369,15 @@ function handleDoubleTap(clientX, clientY) {
 
 function getCanvasCoordinates(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left - imgX * zoomFactor) / (scaleFactor * zoomFactor);
-    const y = (clientY - rect.top - imgY * zoomFactor) / (scaleFactor * zoomFactor);
+    
+    // Coordinate relative al canvas
+    const canvasX = clientX - rect.left;
+    const canvasY = clientY - rect.top;
+    
+    // Applica le trasformazioni inverse (zoom e pan)
+    const x = (canvasX / zoomFactor - imgX) / scaleFactor;
+    const y = (canvasY / zoomFactor - imgY) / scaleFactor;
+    
     return { x, y };
 }
 
@@ -375,23 +444,26 @@ function selectSegment(x, y) {
         }
     });
     
-    if (newSelectedSegment !== selectedSegment) {
+    // Se è stato trovato un segmento e non è quello già selezionato
+    if (newSelectedSegment && newSelectedSegment !== selectedSegment) {
         selectedSegment = newSelectedSegment;
         points = []; // Reset punti temporanei
         
         // NUOVO: Quando si seleziona un segmento, imposta automaticamente il riferimento in pixel
-        if (selectedSegment) {
-            const pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
-            document.getElementById('scale').value = pixelDistance.toFixed(1);
-            showToast(`Selezionato: ${selectedSegment.name} - Riferimento: ${pixelDistance.toFixed(1)}px`, 'info');
+        const pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
+        const scaleElement = document.getElementById('scale');
+        if (scaleElement) {
+            scaleElement.value = pixelDistance.toFixed(1);
         }
+        showToast(`Selezionato: ${selectedSegment.name} - Riferimento: ${pixelDistance.toFixed(1)}px`, 'info');
         
         updateMeasurement();
         
-        return true;
+        return true; // Evento gestito: segmento selezionato
     }
     
-    return selectedSegment !== null;
+    // Restituisce true solo se è stato effettivamente selezionato un segmento
+    return newSelectedSegment !== null;
 }
 
 function distanceToSegment(x, y, segment) {
@@ -417,22 +489,40 @@ function distanceToSegment(x, y, segment) {
 function updateMeasurement() {
     if (selectedSegment) {
         const realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
-        document.getElementById('realsel').value = realDistance;
+        const realSelElement = document.getElementById('realsel');
+        if (realSelElement) {
+            realSelElement.value = realDistance;
+        }
+        
+        // Aggiorna status bar
+        if (currentMeasurement) {
+            currentMeasurement.textContent = `${selectedSegment.name}: ${realDistance} mm`;
+        }
     } else {
-        document.getElementById('realsel').value = '';
+        const realSelElement = document.getElementById('realsel');
+        if (realSelElement) {
+            realSelElement.value = '';
+        }
+        if (currentMeasurement) {
+            currentMeasurement.textContent = 'Nessuna selezione';
+        }
     }
 }
 
 function updateSegmentsList() {
-    const noSegments = segmentsList.querySelector('.no-segments');
-    
-    if (segments.length === 0) {
-        segmentsList.innerHTML = '<div class="no-segments text-muted small text-center py-2">Nessun segmento creato</div>';
-        return;
+    // Aggiorna status bar
+    if (segmentsStatus) {
+        segmentsStatus.textContent = `${segments.length} misure`;
+    }
+    if (segmentsCount) {
+        segmentsCount.textContent = segments.length;
     }
     
-    if (noSegments) {
-        noSegments.remove();
+    if (!segmentsList) return;
+    
+    if (segments.length === 0) {
+        segmentsList.innerHTML = '<div class="list-group-item text-muted text-center">Nessun segmento creato</div>';
+        return;
     }
     
     segmentsList.innerHTML = '';
@@ -445,21 +535,21 @@ function updateSegmentsList() {
 
 function createSegmentListItem(segment, index) {
     const item = document.createElement('div');
-    item.className = `segment-item ${segment === selectedSegment ? 'selected' : ''}`;
+    item.className = `list-group-item d-flex justify-content-between align-items-center ${segment === selectedSegment ? 'active' : ''}`;
     
     const pixelDistance = getPixelDistance(segment.start, segment.end);
     const realDistance = calculateDistance(segment.start, segment.end);
     
     item.innerHTML = `
-        <div class="segment-info">
-            <div class="segment-name" contenteditable="true">${segment.name}</div>
-            <div class="segment-measurement">${pixelDistance.toFixed(1)}px → ${realDistance}mm</div>
+        <div class="flex-grow-1">
+            <div class="fw-bold segment-name" contenteditable="true" style="font-size: 0.9rem;">${segment.name}</div>
+            <div class="text-muted" style="font-size: 0.8rem;">${pixelDistance.toFixed(1)}px → ${realDistance}mm</div>
         </div>
-        <div class="segment-actions">
-            <button class="btn btn-outline-primary btn-segment select-btn" title="Seleziona">
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary select-btn" title="Seleziona">
                 <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-outline-danger btn-segment delete-btn" title="Elimina">
+            <button class="btn btn-outline-danger delete-btn" title="Elimina">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -473,6 +563,7 @@ function createSegmentListItem(segment, index) {
     nameElement.addEventListener('blur', () => {
         segment.name = nameElement.textContent.trim() || `Segmento ${index + 1}`;
         nameElement.textContent = segment.name;
+        updateMeasurement(); // Aggiorna la status bar
     });
     
     selectBtn.addEventListener('click', (e) => {
@@ -549,7 +640,7 @@ function showTouchFeedback(x, y) {
 }
 
 function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
+    const toast = document.getElementById('info-toast');
     const toastBody = document.getElementById('toast-body');
     const toastHeader = toast.querySelector('.toast-header i');
     
@@ -593,7 +684,9 @@ function showConfirmModal(message, onConfirm) {
 
 function updateZoomLevel() {
     const percentage = Math.round(zoomFactor * 100);
-    zoomLevel.textContent = `${percentage}%`;
+    if (zoomLevel) {
+        zoomLevel.textContent = `Zoom: ${percentage}%`;
+    }
 }
 
 function resetView() {
@@ -603,26 +696,6 @@ function resetView() {
     drawCanvas();
 }
 
-// Funzioni per spostare l'immagine
-function moveUp() {
-    imgY -= 20 / zoomFactor;
-    drawCanvas();
-}
-
-function moveDown() {
-    imgY += 20 / zoomFactor;
-    drawCanvas();
-}
-
-function moveLeft() {
-    imgX -= 20 / zoomFactor;
-    drawCanvas();
-}
-
-function moveRight() {
-    imgX += 20 / zoomFactor;
-    drawCanvas();
-}
 
 function zoomIn() {
     zoomFactor = Math.min(5, zoomFactor + 0.2);
@@ -634,106 +707,51 @@ function zoomOut() {
     drawCanvas();
 }
 
-function togglePanel() {
-    // Su desktop (1024px+), il pannello è sempre visibile
-    if (window.innerWidth >= 1024) {
-        return;
-    }
-    
-    panelOpen = !panelOpen;
-    controlPanel.classList.toggle('open', panelOpen);
-    
-    const toggleBtn = document.getElementById('toggle-panel');
-    toggleBtn.innerHTML = panelOpen ? 
-        '<i class="fas fa-times"></i>' : 
-        '<i class="fas fa-cog"></i>';
-}
+// Funzione rimossa - ora usiamo Bootstrap Offcanvas
 
 // === EVENT LISTENERS ===
 document.addEventListener("DOMContentLoaded", function() {
     // Upload
-    document.getElementById('upload').addEventListener('change', loadImage);
-    
-    // Panel toggle
-    document.getElementById('toggle-panel').addEventListener('click', togglePanel);
+    const uploadElement = document.getElementById('upload');
+    if (uploadElement) {
+        uploadElement.addEventListener('change', loadImage);
+    }
     
     // Scale inputs
-    document.getElementById('scale').addEventListener('input', () => {
-        updateMeasurement();
-        drawCanvas();
-    });
+    const scaleElement = document.getElementById('scale');
+    const realElement = document.getElementById('real');
     
-    document.getElementById('real').addEventListener('input', () => {
-        updateMeasurement();
-        updateSegmentsList();
-        drawCanvas();
-    });
+    if (scaleElement) {
+        scaleElement.addEventListener('input', () => {
+            updateMeasurement();
+            drawCanvas();
+        });
+    }
+    
+    if (realElement) {
+        realElement.addEventListener('input', () => {
+            updateMeasurement();
+            updateSegmentsList();
+            drawCanvas();
+        });
+    }
     
     // Controls
-    document.getElementById('deleteall').addEventListener('click', deleteAllSegments);
-    document.getElementById('zoom-in').addEventListener('click', zoomIn);
-    document.getElementById('zoom-out').addEventListener('click', zoomOut);
-    document.getElementById('reset').addEventListener('click', resetView);
-    document.getElementById('center').addEventListener('click', resetView);
+    const deleteAllElement = document.getElementById('deleteall');
+    const zoomInElement = document.getElementById('zoom-in');
+    const zoomOutElement = document.getElementById('zoom-out');
+    const resetElement = document.getElementById('reset');
+    const centerElement = document.getElementById('center');
     
-    // Navigation
-    document.getElementById('xplus').addEventListener('click', moveRight);
-    document.getElementById('xminus').addEventListener('click', moveLeft);
-    document.getElementById('yplus').addEventListener('click', moveDown);
-    document.getElementById('yminus').addEventListener('click', moveUp);
+    if (deleteAllElement) deleteAllElement.addEventListener('click', deleteAllSegments);
+    if (zoomInElement) zoomInElement.addEventListener('click', zoomIn);
+    if (zoomOutElement) zoomOutElement.addEventListener('click', zoomOut);
+    if (resetElement) resetElement.addEventListener('click', resetView);
+    if (centerElement) centerElement.addEventListener('click', resetView);
     
-    // Panel auto-open on mobile
-    if (window.innerWidth < 768) {
-        controlPanel.addEventListener('click', (e) => {
-            if (e.target === controlPanel && !panelOpen) {
-                togglePanel();
-            }
-        });
-        
-        // Swipe up gesture to open panel
-        let startY;
-        controlPanel.addEventListener('touchstart', (e) => {
-            startY = e.touches[0].clientY;
-        });
-        
-        controlPanel.addEventListener('touchmove', (e) => {
-            if (!panelOpen) {
-                const currentY = e.touches[0].clientY;
-                const diff = startY - currentY;
-                
-                if (diff > 50) {
-                    togglePanel();
-                }
-            }
-        });
-    }
-    
-    // Initialize panel state based on screen size
-    function initializePanelState() {
-        if (window.innerWidth >= 1024) {
-            // Desktop: pannello sempre aperto
-            panelOpen = true;
-            controlPanel.classList.add('open');
-            const toggleBtn = document.getElementById('toggle-panel');
-            toggleBtn.style.display = 'none'; // Nascondi il bottone su desktop
-        } else if (window.innerWidth >= 768) {
-            // Tablet: pannello chiuso di default ma toggle visibile
-            panelOpen = false;
-            controlPanel.classList.remove('open');
-            const toggleBtn = document.getElementById('toggle-panel');
-            toggleBtn.style.display = 'block';
-        } else {
-            // Mobile: pannello chiuso di default
-            panelOpen = false;
-            controlPanel.classList.remove('open');
-            const toggleBtn = document.getElementById('toggle-panel');
-            toggleBtn.style.display = 'block';
-        }
-    }
     
     // Resize canvas on window resize
     window.addEventListener('resize', () => {
-        initializePanelState(); // Re-inizializza il pannello
         resizeCanvas();
         drawCanvas();
     });
@@ -741,14 +759,12 @@ document.addEventListener("DOMContentLoaded", function() {
     // Listener per cambio orientamento
     window.addEventListener('orientationchange', () => {
         setTimeout(() => {
-            initializePanelState(); // Re-inizializza il pannello
             resizeCanvas();
             drawCanvas();
         }, 100); // Piccolo delay per attendere il cambio viewport
     });
     
     // Initialize
-    initializePanelState();
     resizeCanvas();
     updateSegmentsList();
     showToast('Applicazione pronta. Carica un\'immagine per iniziare.', 'info');
