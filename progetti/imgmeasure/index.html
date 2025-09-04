@@ -1,144 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Misuratore di Distanze</title>
-    <link rel="stylesheet" href="main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Misuratore di Distanze - Mobile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="main.css">
 </head>
 
 <body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="row">
-                    <div class="row">&nbsp;</div>
+    <!-- Header con informazioni progetto -->
+    <header class="navbar navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-ruler"></i> Misuratore Distanze
+            </span>
+            <button class="btn btn-outline-light btn-sm" id="toggle-panel" type="button">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Canvas area principale -->
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+        
+        <!-- Overlay per feedback visivo -->
+        <div id="canvas-overlay">
+            <div id="crosshair" class="crosshair"></div>
+            <div id="touch-indicator" class="touch-indicator"></div>
+        </div>
+    </div>
+
+    <!-- Pannello controlli collassabile -->
+    <div class="control-panel" id="control-panel">
+        <div class="panel-content">
+            
+            <!-- Sezione upload immagine -->
+            <div class="section-card mb-3">
+                <h6 class="section-title">
+                    <i class="fas fa-image"></i> Carica Immagine
+                </h6>
+                <div class="upload-area">
+                    <input type="file" id="upload" accept="image/*" hidden>
+                    <label for="upload" class="upload-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Tocca per caricare</span>
+                    </label>
                 </div>
-
-                <div class="row mb-3">
-                    <div class="col-sm-6">
-                        <input type="file" id="upload" accept="image/*" class="w-100">
-                    </div>
-                    <div class="col-sm-6">
-                        <small class="text-muted">Immagine da copiare sul foglio da disegno.</small>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="row">&nbsp;</div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="scale">Scala px</label>
-                    </div>
-                    <div class="col-sm-3">
-                        <input type="number" id="scale" value="1" class="w-100">
-                    </div>
-                    <div class="col-sm-6">
-                        <small class="text-muted">Inserire la lunghezza in px del segmento da prendere come riferimento (selected=1).</small>
-                    </div>
-                </div>
-
-                <div class="row" mb-3>
-                    <div class="col-sm-3">
-                        <label for="scale">Reale</label>
-                    </div>
-                    <div class="col-sm-3">
-                        <input type="number" id="real" value="1" class="w-100">
-                    </div>
-                    <div class="col-sm-6">
-                        <small class="text-muted">Lunghezza (mm/cm) del segmento di rifermento sul foglio da disegno.</small>
-                    </div>
-                </div>
-
-                <div class="row" mb-3>
-                    <div class="col-sm-3">
-                        <label for="scale">selected</label>
-                    </div>
-                    <div class="col-sm-3">
-                        <input type="number" id="realsel" value="" disabled class="w-100">
-                    </div>
-                    <div class="col-sm-6">
-                        <small class="text-muted">Lunghezza calcolata del segmento selezionato da riportare sul foglio da disegno.</small>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="row">&nbsp;</div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <button id="delete" type="button" class="btn btn-warning m-1">Elimina il segmento &nbsp</button>
-                    </div>
-                    <div class="col-md-4">
-                        &nbsp;
-                    </div>
-                    <div class="col-md-4">
-                        <button id="deleteall" type="button" class="btn btn-warning m-1">Elimina tutti i
-                            segmenti</button>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="row">&nbsp;</div>
-                </div>
-
-                <!-- Sezione con layout dei pulsanti di controllo -->
-                <div class="row justify-content-center">
-                    <!-- Pulsante Y+ sopra -->
-                    <div class="col-2 d-flex flex-column align-items-center">
-                        <button id="yminus" type="button" class="btn btn-info m-1">Y-</button>
-                    </div>
-                </div>
-
-                <div class="row justify-content-center align-items-center">
-                    <!-- Pulsante X- a sinistra -->
-                    <div class="col-4 text-center">
-                        <button id="xminus" type="button" class="btn btn-primary m-1">X-</button>
-                    </div>
-
-                    <!-- Pulsante centrale -->
-                    <div class="col-4 text-center">
-                        <button id="reset" type="button" class="btn btn-secondary m-1">&nbsp;C&nbsp;</button>
-                    </div>
-
-                    <!-- Pulsante X+ a destra -->
-                    <div class="col-4 text-center">
-                        <button id="xplus" type="button" class="btn btn-primary m-0">X+</button>
-                    </div>
-                </div>
-
-                <!-- Pulsante Y- sotto -->
-                <div class="row justify-content-center">
-                    <div class="col-2 d-flex flex-column align-items-center">
-                        <button id="yplus" type="button" class="btn btn-info m-1">Y+</button>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <button id="zoom-out" type="button" class="btn btn-secondary m-1">Zoom -</button>
-                    </div>
-
-                    <div class="col-md-4">
-                        &nbsp;
-                    </div>
-
-                    <div class="col-md-4">
-                        <button id="zoom-in" type="button" class="btn btn-secondary m-1">Zoom +</button>
-                    </div>
-
-                </div>
-
             </div>
-            <div class="col-md-6">
-                <canvas id="canvas"></canvas>
+
+            <!-- Sezione configurazione scala -->
+            <div class="section-card mb-3">
+                <h6 class="section-title">
+                    <i class="fas fa-ruler-horizontal"></i> Configurazione Scala
+                </h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small">Riferimento (px)</label>
+                        <input type="number" id="scale" value="1" class="form-control form-control-sm" step="0.1">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small">Misura reale (mm)</label>
+                        <input type="number" id="real" value="1" class="form-control form-control-sm" step="0.1">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <label class="form-label small">Segmento selezionato (mm)</label>
+                    <input type="text" id="realsel" disabled class="form-control form-control-sm result-display">
+                </div>
+            </div>
+
+            <!-- Lista segmenti -->
+            <div class="section-card mb-3">
+                <h6 class="section-title">
+                    <i class="fas fa-list"></i> Misure Effettuate
+                    <button class="btn btn-outline-danger btn-sm ms-auto" id="deleteall">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </h6>
+                <div id="segments-list" class="segments-list">
+                    <div class="no-segments text-muted small text-center py-2">
+                        Nessun segmento creato
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controlli navigazione -->
+            <div class="section-card">
+                <h6 class="section-title">
+                    <i class="fas fa-arrows-alt"></i> Controlli Navigazione
+                </h6>
+                
+                <!-- Controlli zoom -->
+                <div class="zoom-controls mb-3">
+                    <button class="btn btn-outline-secondary" id="zoom-out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <span class="zoom-level mx-2" id="zoom-level">100%</span>
+                    <button class="btn btn-outline-secondary" id="zoom-in">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" id="reset">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </button>
+                </div>
+
+                <!-- D-pad per navigazione -->
+                <div class="dpad-container">
+                    <div class="dpad">
+                        <button class="dpad-btn dpad-up" id="yminus">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <button class="dpad-btn dpad-left" id="xminus">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="dpad-btn dpad-center" id="center">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                        <button class="dpad-btn dpad-right" id="xplus">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button class="dpad-btn dpad-down" id="yplus">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast per notifiche -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                <strong class="me-auto">Info</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toast-body">
+                Messaggio di notifica
             </div>
         </div>
     </div>
 
-    <div id="distance"></div>
+    <!-- Modali per conferme -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Conferma</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    Sei sicuro di voler procedere?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="confirm-action">Conferma</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="bootstrap.bundle.min.js"></script>
     <script src="main.js"></script>
