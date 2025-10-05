@@ -518,6 +518,10 @@ function handleMouseUp() {
 }
 
 function handleCanvasClick(event) {
+    // Su tablet con pennino, previeni eventi mouse duplicati dopo touch
+    if (event.pointerType === 'touch' || event.sourceCapabilities?.firesTouchEvents) {
+        return; // Ignora eventi mouse generati da touch
+    }
     event.preventDefault();
     handlePointCreation(event.clientX, event.clientY);
 }
