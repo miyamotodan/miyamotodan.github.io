@@ -939,7 +939,11 @@ function selectSegment(x, y) {
     // Se è stato trovato un segmento e non è quello già selezionato
     if (newSelectedSegment && newSelectedSegment !== selectedSegment) {
         selectedSegment = newSelectedSegment;
-        points = []; // Reset punti temporanei
+        // IMPORTANTE: NON resettare points[] se c'è un disegno in corso!
+        // Altrimenti col pennino il touchStart del secondo click cancella il primo punto
+        if (points.length === 0) {
+            points = []; // Reset punti temporanei solo se non stiamo disegnando
+        }
         
         // NUOVO: Quando si seleziona un segmento, imposta automaticamente il riferimento in pixel
         const pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
