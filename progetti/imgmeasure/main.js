@@ -878,7 +878,9 @@ function findNearestEndpoint(x, y) {
                             Math.abs(points[0].y - segment.start.y) < 0.1;
 
         if (DEBUG_MODE && points.length > 0) {
-            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)} isFirstPt=${isFirstPoint}`);
+            const dx = Math.abs(points[0].x - segment.start.x);
+            const dy = Math.abs(points[0].y - segment.start.y);
+            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)} pt0=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) dx=${dx.toFixed(3)} dy=${dy.toFixed(3)} isFirstPt=${isFirstPoint}`);
         }
 
         if (!isFirstPoint && distToStart <= minDistance) {
