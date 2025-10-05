@@ -439,17 +439,25 @@ function handlePointCreation(clientX, clientY) {
 
     // 1. Se c'è un disegno in corso (primo punto già piazzato), PRIORITÀ AL DISEGNO
     if (points.length > 0) {
-        // Cerca snap agli endpoint esistenti
-        const snapPoint = findNearestEndpoint(coords.x, coords.y);
-        if (snapPoint) {
-            // Snap trovato! Usa il punto esatto dell'endpoint
-            addDebugLog('SNAP_FOUND', `chiusura segmento su endpoint (${snapPoint.x.toFixed(1)}, ${snapPoint.y.toFixed(1)})`);
-            addPoint(snapPoint.x, snapPoint.y);
+        // Se c'è uno snapPreviewPoint attivo, usalo direttamente
+        if (snapPreviewPoint) {
+            addDebugLog('SNAP_FOUND', `chiusura con preview snap (${snapPreviewPoint.x.toFixed(1)}, ${snapPreviewPoint.y.toFixed(1)})`);
+            addPoint(snapPreviewPoint.x, snapPreviewPoint.y);
             showToast('Punto agganciato all\'endpoint', 'success');
+            snapPreviewPoint = null; // Reset
         } else {
-            // Nessuno snap, usa coordinate normali
-            addDebugLog('POINT_ADDED', `normale (${coords.x.toFixed(1)}, ${coords.y.toFixed(1)})`);
-            addPoint(coords.x, coords.y);
+            // Nessuno snap nel preview, prova a cercarlo
+            const snapPoint = findNearestEndpoint(coords.x, coords.y);
+            if (snapPoint) {
+                // Snap trovato! Usa il punto esatto dell'endpoint
+                addDebugLog('SNAP_FOUND', `chiusura segmento su endpoint (${snapPoint.x.toFixed(1)}, ${snapPoint.y.toFixed(1)})`);
+                addPoint(snapPoint.x, snapPoint.y);
+                showToast('Punto agganciato all\'endpoint', 'success');
+            } else {
+                // Nessuno snap, usa coordinate normali
+                addDebugLog('POINT_ADDED', `normale (${coords.x.toFixed(1)}, ${coords.y.toFixed(1)})`);
+                addPoint(coords.x, coords.y);
+            }
         }
         return true;
     }
