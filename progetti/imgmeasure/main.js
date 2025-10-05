@@ -565,7 +565,10 @@ function handleTouchMove(event) {
         const deltaX = touch.clientX - panStartX;
         const deltaY = touch.clientY - panStartY;
 
-        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        // SOGLIA PIÙ ALTA: Se c'è un disegno in corso, richiedi movimento significativo per attivare pan
+        const panThreshold = points.length > 0 ? 15 : 5;
+
+        if (Math.abs(deltaX) > panThreshold || Math.abs(deltaY) > panThreshold) {
             // Single touch pan
             isPanning = true;
             panX += deltaX / zoomFactor;
