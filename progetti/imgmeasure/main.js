@@ -596,6 +596,10 @@ function handleTouchStart(event) {
 function handleTouchMove(event) {
     event.preventDefault();
 
+    if (DEBUG_MODE && points.length > 0) {
+        addDebugLog('TOUCH_MOVE', `touches=${event.touches.length}, points.length=${points.length}`);
+    }
+
     if (event.touches.length === 1 && !isMultiTouch) {
         const touch = event.touches[0];
         const deltaX = touch.clientX - panStartX;
