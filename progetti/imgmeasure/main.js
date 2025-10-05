@@ -914,10 +914,15 @@ function findNearestEndpoint(x, y) {
 
 function calculateDistance(point1, point2) {
     const pixelDistance = getPixelDistance(point1, point2);
-    
-    const referencePx = parseFloat(document.getElementById('scale').value) || 1;
-    const realMm = parseFloat(document.getElementById('real').value) || 1;
-    
+
+    const referencePx = parseFloat(document.getElementById('scale').value);
+    const realMm = parseFloat(document.getElementById('real').value);
+
+    // Se non è stato impostato un rapporto valido, mostra i pixel
+    if (!referencePx || referencePx <= 0 || !realMm || realMm <= 0) {
+        return pixelDistance.toFixed(2);
+    }
+
     // Formula corretta: pixelDistance * (realMm / referencePx)
     const realDistance = pixelDistance * (realMm / referencePx);
     return realDistance.toFixed(2);
@@ -944,17 +949,16 @@ function selectSegment(x, y) {
         if (points.length === 0) {
             points = []; // Reset punti temporanei solo se non stiamo disegnando
         }
-        
-        // NUOVO: Quando si seleziona un segmento, imposta automaticamente il riferimento in pixel
-        const pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
-        const scaleElement = document.getElementById('scale');
-        if (scaleElement) {
-            scaleElement.value = pixelDistance.toFixed(1);
+
+        // Abilita il pulsante "Imposta come riferimento"
+        const setRefBtn = document.getElementById('set-reference-btn');
+        if (setRefBtn) {
+            setRefBtn.disabled = false;
         }
-        showToast(`Selezionato: ${selectedSegment.name} - Riferimento: ${pixelDistance.toFixed(1)}px`, 'info');
-        
+
+        showToast(`Selezionato: ${selectedSegment.name}`, 'info');
         updateMeasurement();
-        
+
         return true; // Evento gestito: segmento selezionato
     }
     
@@ -984,18 +988,33 @@ function distanceToSegment(x, y, segment) {
 // === FUNZIONI UI E UTILITA' ===
 function updateMeasurement() {
     if (selectedSegment) {
+        const pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
         const realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
+
+        const pixelSelElement = document.getElementById('pixelsel');
         const realSelElement = document.getElementById('realsel');
+
+        // Mostra i pixel del segmento selezionato con maggiore precisione
+        if (pixelSelElement) {
+            pixelSelElement.value = pixelDistance.toFixed(3);
+        }
+
+        // Mostra la misura calcolata con il rapporto corrente
         if (realSelElement) {
             realSelElement.value = realDistance;
         }
-        
+
         // Aggiorna status bar
         if (currentMeasurement) {
-            currentMeasurement.textContent = `${selectedSegment.name}: ${realDistance} mm`;
+            currentMeasurement.textContent = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm`;
         }
     } else {
+        const pixelSelElement = document.getElementById('pixelsel');
         const realSelElement = document.getElementById('realsel');
+
+        if (pixelSelElement) {
+            pixelSelElement.value = '';
+        }
         if (realSelElement) {
             realSelElement.value = '';
         }
@@ -1003,6 +1022,30 @@ function updateMeasurement() {
             currentMeasurement.textContent = 'Nessuna selezione';
         }
     }
+}
+
+function setAsReference() {
+    const scaleElement = document.getElementById('scale');
+    const realElement = document.getElementById('real');
+
+    const referencePx = parseFloat(scaleElement?.value);
+    const realMm = parseFloat(realElement?.value);
+
+    // Validazione: entrambi i campi devono essere compilati e maggiori di zero
+    if (!referencePx || referencePx <= 0 || !realMm || realMm <= 0) {
+        showToast('Inserisci valori validi in "Riferimento (px)" e "Misura reale (mm)"', 'warning');
+        return;
+    }
+
+    // Calcola il rapporto
+    const ratio = realMm / referencePx;
+
+    showToast(`Rapporto di scala applicato: ${referencePx.toFixed(1)}px = ${realMm}mm (${ratio.toFixed(4)} mm/px)`, 'success');
+
+    // Ridisegna tutto con il nuovo rapporto
+    updateMeasurement();
+    updateSegmentsList();
+    drawCanvas();
 }
 
 function updateSegmentsList() {
@@ -1424,10 +1467,12 @@ document.addEventListener("DOMContentLoaded", function() {
     // Scale inputs
     const scaleElement = document.getElementById('scale');
     const realElement = document.getElementById('real');
+    const setReferenceBtn = document.getElementById('set-reference-btn');
 
     if (scaleElement) {
         scaleElement.addEventListener('input', () => {
             updateMeasurement();
+            updateSegmentsList();
             drawCanvas();
         });
     }
@@ -1438,6 +1483,10 @@ document.addEventListener("DOMContentLoaded", function() {
             updateSegmentsList();
             drawCanvas();
         });
+    }
+
+    if (setReferenceBtn) {
+        setReferenceBtn.addEventListener('click', setAsReference);
     }
 
     // Controls
