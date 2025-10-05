@@ -9,6 +9,11 @@ const currentMeasurement = document.getElementById('current-measurement');
 const segmentsStatus = document.getElementById('segments-status');
 const segmentsCount = document.getElementById('segments-count');
 
+// Debug logging
+const DEBUG_MODE = true; // Imposta a false per nascondere il pulsante debug
+let debugLog = [];
+const MAX_DEBUG_ENTRIES = 100;
+
 let img = new Image();
 let points = [];
 let segments = [];
@@ -412,14 +417,18 @@ let lastTouchEndTime = 0; // Per bloccare eventi mouse dopo touch
 function handlePointCreation(clientX, clientY) {
     const currentTime = Date.now();
 
+    addDebugLog('HANDLE_POINT', `points.length=${points.length}, lastClickTime=${currentTime - lastClickTime}ms ago`);
+
     // Prevenire eventi duplicati
     if (currentTime - lastClickTime < clickCooldown) {
+        addDebugLog('POINT_BLOCKED', `duplicato (${currentTime - lastClickTime}ms < ${clickCooldown}ms)`);
         return false;
     }
     lastClickTime = currentTime;
 
     // Verifica condizioni di blocco
     if (isMultiTouch || isPanning || isMousePanning) {
+        addDebugLog('POINT_BLOCKED', `gesture attiva: multiTouch=${isMultiTouch}, panning=${isPanning}, mousePan=${isMousePanning}`);
         return false;
     }
 
@@ -434,10 +443,12 @@ function handlePointCreation(clientX, clientY) {
         const snapPoint = findNearestEndpoint(coords.x, coords.y);
         if (snapPoint) {
             // Snap trovato! Usa il punto esatto dell'endpoint
+            addDebugLog('SNAP_FOUND', `chiusura segmento su endpoint (${snapPoint.x.toFixed(1)}, ${snapPoint.y.toFixed(1)})`);
             addPoint(snapPoint.x, snapPoint.y);
             showToast('Punto agganciato all\'endpoint', 'success');
         } else {
             // Nessuno snap, usa coordinate normali
+            addDebugLog('POINT_ADDED', `normale (${coords.x.toFixed(1)}, ${coords.y.toFixed(1)})`);
             addPoint(coords.x, coords.y);
         }
         return true;
@@ -447,6 +458,7 @@ function handlePointCreation(clientX, clientY) {
     const snapPoint = findNearestEndpoint(coords.x, coords.y);
     if (snapPoint) {
         // Inizia un nuovo disegno da un endpoint esistente
+        addDebugLog('SNAP_FOUND', `inizio segmento da endpoint (${snapPoint.x.toFixed(1)}, ${snapPoint.y.toFixed(1)})`);
         addPoint(snapPoint.x, snapPoint.y);
         showToast('Punto agganciato all\'endpoint', 'success');
         return true;
@@ -454,12 +466,14 @@ function handlePointCreation(clientX, clientY) {
 
     // 3. Nessuno snap: prova a selezionare un segmento esistente
     if (selectSegment(coords.x, coords.y)) {
+        addDebugLog('SEGMENT_SELECTED', 'segmento selezionato');
         drawCanvas();
         updateSegmentsList();
         return true; // Evento gestito
     }
 
     // 4. Niente di tutto ciò: crea nuovo punto
+    addDebugLog('POINT_ADDED', `nuovo (${coords.x.toFixed(1)}, ${coords.y.toFixed(1)})`);
     addPoint(coords.x, coords.y);
     return true; // Evento gestito
 }
@@ -522,10 +536,14 @@ function handleCanvasClick(event) {
     event.preventDefault();
 
     const currentTime = Date.now();
+    const timeSinceTouchEnd = currentTime - lastTouchEndTime;
+
+    addDebugLog('CLICK', `timeSinceTouchEnd=${timeSinceTouchEnd}ms, points.length=${points.length}`);
+
     // Su tablet con pennino, previeni eventi mouse duplicati dopo touch
     // Se è passato meno di 500ms dall'ultimo touchEnd, ignora il click
-    if (currentTime - lastTouchEndTime < 500) {
-        console.log('Click ignorato: troppo vicino a touchEnd');
+    if (timeSinceTouchEnd < 500) {
+        addDebugLog('CLICK_IGNORED', `troppo vicino a touchEnd (${timeSinceTouchEnd}ms)`);
         return;
     }
 
@@ -613,12 +631,17 @@ function handleTouchMove(event) {
 function handleTouchEnd(event) {
     event.preventDefault();
 
+    addDebugLog('TOUCH_END', `touches.length=${event.touches.length}, isPanning=${isPanning}, isMultiTouch=${isMultiTouch}`);
+
     if (event.touches.length === 0) {
         // All fingers lifted
         if (!isPanning && !isMultiTouch && touches.length === 1) {
             // Single tap without pan
             const touch = touches[0];
+            addDebugLog('TOUCH_TAP', `calling handlePointCreation, points.length=${points.length}`);
             handlePointCreation(touch.clientX, touch.clientY);
+        } else {
+            addDebugLog('TOUCH_END_NO_ACTION', `isPanning=${isPanning}, isMultiTouch=${isMultiTouch}, touches.length=${touches.length}`);
         }
 
         isPanning = false;
@@ -722,6 +745,7 @@ function createSegment() {
 
         segments.push(segment);
         selectedSegment = segment;
+        addDebugLog('SEGMENT_CREATED', `id=${segment.id}, start=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}), end=(${points[1].x.toFixed(1)},${points[1].y.toFixed(1)})`);
         points = [];
         previewPoint = null; // Reset preview per evitare bug
 
@@ -1037,11 +1061,70 @@ function showTouchFeedback(x, y) {
     }, 200);
 }
 
+function addDebugLog(eventType, details) {
+    if (!DEBUG_MODE) return; // Non loggare se debug è disabilitato
+
+    const timestamp = new Date().toLocaleTimeString('it-IT', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        fractionalSecondDigits: 3
+    });
+
+    const logEntry = {
+        time: timestamp,
+        event: eventType,
+        details: details
+    };
+
+    debugLog.push(logEntry);
+
+    // Mantieni solo le ultime MAX_DEBUG_ENTRIES voci
+    if (debugLog.length > MAX_DEBUG_ENTRIES) {
+        debugLog.shift();
+    }
+
+    updateDebugDisplay();
+}
+
+function updateDebugDisplay() {
+    const debugLogElement = document.getElementById('debug-log');
+    if (!debugLogElement) return;
+
+    if (debugLog.length === 0) {
+        debugLogElement.innerHTML = '<div class="text-muted">Log eventi pronto...</div>';
+        return;
+    }
+
+    const html = debugLog.map(entry => {
+        const colorClass =
+            entry.event.includes('CLICK') ? 'text-primary' :
+            entry.event.includes('TOUCH') ? 'text-success' :
+            entry.event.includes('SNAP') ? 'text-warning' :
+            entry.event.includes('SEGMENT') ? 'text-info' :
+            entry.event.includes('IGNORED') ? 'text-danger' :
+            'text-secondary';
+
+        return `<div class="${colorClass}">
+            <strong>[${entry.time}]</strong> ${entry.event}: ${entry.details}
+        </div>`;
+    }).reverse().join('');
+
+    debugLogElement.innerHTML = html;
+    debugLogElement.scrollTop = 0;
+}
+
+function clearDebugLog() {
+    debugLog = [];
+    updateDebugDisplay();
+}
+
 function showToast(message, type = 'info') {
     const toast = document.getElementById('info-toast');
     const toastBody = document.getElementById('toast-body');
     const toastHeader = toast.querySelector('.toast-header i');
-    
+
     // Set icon and color based on type
     toastHeader.className = `fas me-2 ${
         type === 'success' ? 'fa-check-circle text-success' :
@@ -1049,9 +1132,9 @@ function showToast(message, type = 'info') {
         type === 'error' ? 'fa-times-circle text-danger' :
         'fa-info-circle text-primary'
     }`;
-    
+
     toastBody.textContent = message;
-    
+
     const bsToast = new bootstrap.Toast(toast, {
         delay: 1000
     });
@@ -1312,9 +1395,24 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    // Debug log clear button
+    const clearDebugBtn = document.getElementById('clear-debug-log');
+    if (clearDebugBtn) {
+        clearDebugBtn.addEventListener('click', clearDebugLog);
+    }
+
+    // Mostra/nascondi pulsante debug in base a DEBUG_MODE
+    const debugButton = document.querySelector('[data-bs-target="#debugModal"]');
+    if (debugButton) {
+        debugButton.style.display = DEBUG_MODE ? '' : 'none';
+    }
+
     // Initialize
     resizeCanvas();
     updateSegmentsList();
     showToast('Applicazione pronta. Carica un\'immagine per iniziare.', 'info');
+    if (DEBUG_MODE) {
+        addDebugLog('APP_START', 'Applicazione inizializzata');
+    }
 });
 
