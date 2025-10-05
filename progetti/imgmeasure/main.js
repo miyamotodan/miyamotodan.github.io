@@ -37,6 +37,22 @@ let isMultiTouch = false;
 let panelOpen = false;
 let segmentCounter = 1;
 
+// Drawing mode
+let drawingMode = 'segment'; // 'segment' or 'rectangle'
+let previewPoint = null; // Per l'anteprima del rettangolo/segmento
+let showPreview = true; // Flag per attivare/disattivare l'anteprima
+
+// Theme
+let currentTheme = 'dark'; // 'light', 'dark', 'contrast'
+
+// === COSTANTI CONFIGURAZIONE GRAFICA ===
+const SEGMENT_LINE_WIDTH = 2;           // Spessore segmento normale
+const SEGMENT_SELECTED_LINE_WIDTH = 3;  // Spessore segmento selezionato
+const PREVIEW_LINE_WIDTH = 3;           // Spessore anteprima (segmento/rettangolo)
+const CONTROL_POINT_RADIUS = 4;         // Raggio punto controllo normale
+const CONTROL_POINT_SELECTED_RADIUS = 6; // Raggio punto controllo selezionato
+const CONTROL_POINT_TEMP_RADIUS = 5;    // Raggio punti temporanei
+
 // === FUNZIONI CORE ===
 function loadImage(event) {
     const file = event.target.files[0];
@@ -112,31 +128,40 @@ function resizeCanvas() {
 
 function drawCanvas() {
     if (!img.complete) return;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(zoomFactor, zoomFactor);
-    
+
     // Disegna l'immagine
     if (img.width && img.height) {
         ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
     }
-    
+
     // Disegna tutti i segmenti
     segments.forEach(segment => drawSegment(segment));
-    
+
     // Disegna i punti temporanei se ci sono
     if (points.length > 0) {
         drawTemporaryPoints();
     }
-    
+
+    // Disegna anteprima se attiva e c'è un punto iniziale
+    if (showPreview && points.length === 1 && previewPoint) {
+        if (drawingMode === 'segment') {
+            drawSegmentPreview();
+        } else if (drawingMode === 'rectangle') {
+            drawRectanglePreview();
+        }
+    }
+
     ctx.restore();
     updateZoomLevel();
 }
 
 function drawSegment(segment) {
     let startX, startY, endX, endY;
-    
+
     if (img.width && img.height && scaleFactor !== 1) {
         // Con immagine: applica scale factor e offset
         startX = (segment.start.x * scaleFactor) + imgX;
@@ -150,21 +175,26 @@ function drawSegment(segment) {
         endX = segment.end.x + imgX;
         endY = segment.end.y + imgY;
     }
-    
+
+    // Usa colori CSS variabili dal tema
+    const segmentColor = getComputedStyle(document.documentElement).getPropertyValue(
+        segment === selectedSegment ? '--segment-selected-alpha' : '--segment-color-alpha'
+    ).trim();
+
     // Linea principale
-    ctx.strokeStyle = segment === selectedSegment ? 'rgba(0, 123, 255, 0.7)' : 'rgba(220, 53, 69, 0.6)';
-    ctx.lineWidth = segment === selectedSegment ? 2 : 1;
+    ctx.strokeStyle = segmentColor;
+    ctx.lineWidth = segment === selectedSegment ? SEGMENT_SELECTED_LINE_WIDTH : SEGMENT_LINE_WIDTH;
     ctx.lineCap = 'round';
-    
+
     ctx.beginPath();
     ctx.moveTo(startX, startY);
     ctx.lineTo(endX, endY);
     ctx.stroke();
-    
+
     // Punti di controllo
     drawControlPoint(startX, startY, segment === selectedSegment);
     drawControlPoint(endX, endY, segment === selectedSegment);
-    
+
     // Etichetta con la misura
     if (segment === selectedSegment) {
         drawMeasurementLabel(segment, startX, startY, endX, endY);
@@ -172,20 +202,26 @@ function drawSegment(segment) {
 }
 
 function drawControlPoint(x, y, isSelected) {
-    ctx.fillStyle = isSelected ? 'rgba(0, 123, 255, 0.5)' : 'rgba(220, 53, 69, 0.4)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.lineWidth = 1;
-    
+    const pointColor = getComputedStyle(document.documentElement).getPropertyValue(
+        isSelected ? '--segment-selected-alpha' : '--segment-color-alpha'
+    ).trim();
+
+    ctx.fillStyle = pointColor;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 2;
+
     ctx.beginPath();
-    ctx.arc(x, y, isSelected ? 5 : 3, 0, 2 * Math.PI);
+    ctx.arc(x, y, isSelected ? CONTROL_POINT_SELECTED_RADIUS : CONTROL_POINT_RADIUS, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
 }
 
 function drawTemporaryPoints() {
+    const tempColor = getComputedStyle(document.documentElement).getPropertyValue('--temp-point-color').trim();
+
     points.forEach(point => {
         let x, y;
-        
+
         if (img.width && img.height && scaleFactor !== 1) {
             // Con immagine: applica scale factor e offset
             x = (point.x * scaleFactor) + imgX;
@@ -195,44 +231,117 @@ function drawTemporaryPoints() {
             x = point.x + imgX;
             y = point.y + imgY;
         }
-        
-        ctx.fillStyle = 'rgba(40, 167, 69, 0.6)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 1;
-        
+
+        ctx.fillStyle = tempColor;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 2;
+
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.arc(x, y, CONTROL_POINT_TEMP_RADIUS, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
     });
 }
 
+function drawSegmentPreview() {
+    if (!points[0] || !previewPoint) return;
+
+    const previewColor = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
+
+    // Converti coordinate in coordinate canvas
+    let x1, y1, x2, y2;
+    if (img.width && img.height && scaleFactor !== 1) {
+        x1 = (points[0].x * scaleFactor) + imgX;
+        y1 = (points[0].y * scaleFactor) + imgY;
+        x2 = (previewPoint.x * scaleFactor) + imgX;
+        y2 = (previewPoint.y * scaleFactor) + imgY;
+    } else {
+        x1 = points[0].x + imgX;
+        y1 = points[0].y + imgY;
+        x2 = previewPoint.x + imgX;
+        y2 = previewPoint.y + imgY;
+    }
+
+    // Disegna segmento semi-trasparente con linea tratteggiata
+    ctx.strokeStyle = previewColor;
+    ctx.lineWidth = PREVIEW_LINE_WIDTH;
+    ctx.setLineDash([8, 4]);
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+}
+
+function drawRectanglePreview() {
+    if (!points[0] || !previewPoint) return;
+
+    const previewStroke = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
+    const previewFill = getComputedStyle(document.documentElement).getPropertyValue('--preview-fill-alpha').trim();
+
+    // Calcola i vertici del rettangolo
+    const minX = Math.min(points[0].x, previewPoint.x);
+    const maxX = Math.max(points[0].x, previewPoint.x);
+    const minY = Math.min(points[0].y, previewPoint.y);
+    const maxY = Math.max(points[0].y, previewPoint.y);
+
+    // Converti in coordinate canvas
+    let x1, y1, x2, y2;
+    if (img.width && img.height && scaleFactor !== 1) {
+        x1 = (minX * scaleFactor) + imgX;
+        y1 = (minY * scaleFactor) + imgY;
+        x2 = (maxX * scaleFactor) + imgX;
+        y2 = (maxY * scaleFactor) + imgY;
+    } else {
+        x1 = minX + imgX;
+        y1 = minY + imgY;
+        x2 = maxX + imgX;
+        y2 = maxY + imgY;
+    }
+
+    // Disegna rettangolo semi-trasparente
+    ctx.strokeStyle = previewStroke;
+    ctx.fillStyle = previewFill;
+    ctx.lineWidth = PREVIEW_LINE_WIDTH;
+    ctx.setLineDash([8, 4]);
+
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+
+    ctx.setLineDash([]);
+}
+
 function drawMeasurementLabel(segment, startX, startY, endX, endY) {
+    const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--label-bg').trim();
+    const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
+
     const realDistance = calculateDistance(segment.start, segment.end);
-    
+
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
-    
+
     // Calcola la posizione dell'etichetta spostata dalla linea
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
     const offsetX = (-dy / length) * 20;
     const offsetY = (dx / length) * 20;
-    
+
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
-    
+
     // Sfondo dell'etichetta
-    ctx.fillStyle = 'rgba(0, 123, 255, 0.7)';
+    ctx.fillStyle = labelBg;
     const text = `${realDistance} mm`;
-    ctx.font = '11px Arial';
+    ctx.font = 'bold 12px Arial';
     const textWidth = ctx.measureText(text).width;
-    
-    ctx.fillRect(labelX - textWidth/2 - 4, labelY - 14, textWidth + 8, 16);
-    
+
+    ctx.fillRect(labelX - textWidth/2 - 6, labelY - 16, textWidth + 12, 20);
+
     // Testo
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = labelText;
     ctx.textAlign = 'center';
     ctx.fillText(text, labelX, labelY - 2);
 }
@@ -304,15 +413,20 @@ function handleMouseMove(event) {
         event.preventDefault();
         const deltaX = event.clientX - mouseStartX;
         const deltaY = event.clientY - mouseStartY;
-        
+
         panX += deltaX / zoomFactor;
         panY += deltaY / zoomFactor;
-        
+
         imgX = centerX + panX;
         imgY = centerY + panY;
-        
+
         mouseStartX = event.clientX;
         mouseStartY = event.clientY;
+        drawCanvas();
+    } else if (showPreview && points.length === 1) {
+        // Aggiorna l'anteprima (segmento o rettangolo)
+        const coords = getCanvasCoordinates(event.clientX, event.clientY);
+        previewPoint = coords;
         drawCanvas();
     }
 }
@@ -366,23 +480,28 @@ function handleTouchStart(event) {
 
 function handleTouchMove(event) {
     event.preventDefault();
-    
+
     if (event.touches.length === 1 && !isMultiTouch) {
-        // Single touch pan
         const touch = event.touches[0];
         const deltaX = touch.clientX - panStartX;
         const deltaY = touch.clientY - panStartY;
-        
+
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+            // Single touch pan
             isPanning = true;
             panX += deltaX / zoomFactor;
             panY += deltaY / zoomFactor;
-            
+
             imgX = centerX + panX;
             imgY = centerY + panY;
-            
+
             panStartX = touch.clientX;
             panStartY = touch.clientY;
+            drawCanvas();
+        } else if (showPreview && points.length === 1 && !isPanning) {
+            // Aggiorna l'anteprima (segmento o rettangolo) durante il movimento
+            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
+            previewPoint = coords;
             drawCanvas();
         }
     } else if (event.touches.length === 2) {
@@ -464,30 +583,88 @@ function getDistance(touch1, touch2) {
 }
 
 function addPoint(x, y) {
+    // Al primo punto, deseleziona il segmento corrente per nascondere le misure
+    if (points.length === 0) {
+        selectedSegment = null;
+        updateMeasurement();
+    }
+
     points.push({ x, y });
-    
+
     if (points.length === 2) {
         createSegment();
     }
-    
+
     drawCanvas();
 }
 
+function cancelCurrentDrawing() {
+    if (points.length > 0) {
+        points = [];
+        previewPoint = null;
+        drawCanvas();
+        showToast('Disegno annullato', 'info');
+        return true;
+    }
+    return false;
+}
+
 function createSegment() {
-    const segment = {
-        id: segmentCounter++,
-        name: `Segmento ${segmentCounter - 1}`,
-        start: points[0],
-        end: points[1]
-    };
-    
-    segments.push(segment);
-    selectedSegment = segment;
-    points = [];
-    
-    updateMeasurement();
-    updateSegmentsList();
-    showToast('Nuovo segmento creato', 'success');
+    if (drawingMode === 'segment') {
+        // Modalità segmento singolo
+        const segment = {
+            id: segmentCounter++,
+            name: `Segmento ${segmentCounter - 1}`,
+            start: points[0],
+            end: points[1]
+        };
+
+        segments.push(segment);
+        selectedSegment = segment;
+        points = [];
+
+        updateMeasurement();
+        updateSegmentsList();
+        showToast('Nuovo segmento creato', 'success');
+    } else if (drawingMode === 'rectangle') {
+        // Modalità rettangolo: crea 4 segmenti
+        const minX = Math.min(points[0].x, points[1].x);
+        const maxX = Math.max(points[0].x, points[1].x);
+        const minY = Math.min(points[0].y, points[1].y);
+        const maxY = Math.max(points[0].y, points[1].y);
+
+        // I 4 vertici del rettangolo
+        const topLeft = { x: minX, y: minY };
+        const topRight = { x: maxX, y: minY };
+        const bottomRight = { x: maxX, y: maxY };
+        const bottomLeft = { x: minX, y: maxY };
+
+        // Crea i 4 segmenti del rettangolo
+        const rectSegments = [
+            { start: topLeft, end: topRight, name: `Rett${segmentCounter} - Superiore` },
+            { start: topRight, end: bottomRight, name: `Rett${segmentCounter} - Destro` },
+            { start: bottomRight, end: bottomLeft, name: `Rett${segmentCounter} - Inferiore` },
+            { start: bottomLeft, end: topLeft, name: `Rett${segmentCounter} - Sinistro` }
+        ];
+
+        rectSegments.forEach(seg => {
+            const segment = {
+                id: segmentCounter++,
+                name: seg.name,
+                start: seg.start,
+                end: seg.end
+            };
+            segments.push(segment);
+        });
+
+        selectedSegment = segments[segments.length - 1]; // Seleziona l'ultimo segmento creato
+        points = [];
+        previewPoint = null; // Resetta l'anteprima
+
+        updateMeasurement();
+        updateSegmentsList();
+        showToast('Nuovo rettangolo creato (4 segmenti)', 'success');
+    }
 }
 
 function getPixelDistance(point1, point2) {
@@ -731,7 +908,7 @@ function showToast(message, type = 'info') {
     toastBody.textContent = message;
     
     const bsToast = new bootstrap.Toast(toast, {
-        delay: 3000
+        delay: 1000
     });
     bsToast.show();
 }
@@ -788,27 +965,141 @@ function zoomOut() {
     drawCanvas();
 }
 
+// === FUNZIONI TEMA ===
+function setTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Salva preferenza in localStorage
+    localStorage.setItem('imgmeasure-theme', theme);
+
+    // Ridisegna canvas con nuovi colori
+    drawCanvas();
+
+    // Feedback visivo
+    const themeNames = {
+        'light': 'Tema Chiaro',
+        'dark': 'Tema Scuro',
+        'contrast': 'Alto Contrasto'
+    };
+    showToast(`${themeNames[theme]} attivato`, 'info');
+}
+
+function loadThemeFromStorage() {
+    const savedTheme = localStorage.getItem('imgmeasure-theme');
+    if (savedTheme && ['light', 'dark', 'contrast'].includes(savedTheme)) {
+        currentTheme = savedTheme;
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+}
+
 // Funzione rimossa - ora usiamo Bootstrap Offcanvas
 
 // === EVENT LISTENERS ===
 document.addEventListener("DOMContentLoaded", function() {
+    // Carica tema salvato
+    loadThemeFromStorage();
+
     // Upload
     const uploadElement = document.getElementById('upload');
     if (uploadElement) {
         uploadElement.addEventListener('change', loadImage);
     }
-    
+
+    // Theme buttons
+    const themeLightBtn = document.getElementById('theme-light');
+    const themeDarkBtn = document.getElementById('theme-dark');
+    const themeContrastBtn = document.getElementById('theme-contrast');
+
+    if (themeLightBtn) {
+        themeLightBtn.addEventListener('click', () => {
+            setTheme('light');
+            themeLightBtn.classList.add('active');
+            themeDarkBtn.classList.remove('active');
+            themeContrastBtn.classList.remove('active');
+        });
+    }
+
+    if (themeDarkBtn) {
+        themeDarkBtn.addEventListener('click', () => {
+            setTheme('dark');
+            themeDarkBtn.classList.add('active');
+            themeLightBtn.classList.remove('active');
+            themeContrastBtn.classList.remove('active');
+        });
+    }
+
+    if (themeContrastBtn) {
+        themeContrastBtn.addEventListener('click', () => {
+            setTheme('contrast');
+            themeContrastBtn.classList.add('active');
+            themeLightBtn.classList.remove('active');
+            themeDarkBtn.classList.remove('active');
+        });
+    }
+
+    // Imposta il pulsante attivo in base al tema corrente
+    if (currentTheme === 'light') themeLightBtn?.classList.add('active');
+    else if (currentTheme === 'dark') themeDarkBtn?.classList.add('active');
+    else if (currentTheme === 'contrast') themeContrastBtn?.classList.add('active');
+
+    // Toggle preview button
+    const togglePreviewBtn = document.getElementById('toggle-preview');
+
+    if (togglePreviewBtn) {
+        togglePreviewBtn.addEventListener('click', () => {
+            showPreview = !showPreview;
+            if (showPreview) {
+                togglePreviewBtn.classList.add('active');
+                showToast('Anteprima attivata', 'info');
+            } else {
+                togglePreviewBtn.classList.remove('active');
+                previewPoint = null; // Resetta l'anteprima corrente
+                showToast('Anteprima disattivata', 'info');
+            }
+            drawCanvas();
+        });
+    }
+
+    // Drawing mode buttons
+    const modeSegmentBtn = document.getElementById('mode-segment');
+    const modeRectangleBtn = document.getElementById('mode-rectangle');
+
+    if (modeSegmentBtn) {
+        modeSegmentBtn.addEventListener('click', () => {
+            drawingMode = 'segment';
+            modeSegmentBtn.classList.add('active');
+            modeRectangleBtn.classList.remove('active');
+            points = []; // Reset punti temporanei
+            previewPoint = null;
+            drawCanvas();
+            showToast('Modalità Segmento attivata', 'info');
+        });
+    }
+
+    if (modeRectangleBtn) {
+        modeRectangleBtn.addEventListener('click', () => {
+            drawingMode = 'rectangle';
+            modeRectangleBtn.classList.add('active');
+            modeSegmentBtn.classList.remove('active');
+            points = []; // Reset punti temporanei
+            previewPoint = null;
+            drawCanvas();
+            showToast('Modalità Rettangolo attivata', 'info');
+        });
+    }
+
     // Scale inputs
     const scaleElement = document.getElementById('scale');
     const realElement = document.getElementById('real');
-    
+
     if (scaleElement) {
         scaleElement.addEventListener('input', () => {
             updateMeasurement();
             drawCanvas();
         });
     }
-    
+
     if (realElement) {
         realElement.addEventListener('input', () => {
             updateMeasurement();
@@ -816,14 +1107,14 @@ document.addEventListener("DOMContentLoaded", function() {
             drawCanvas();
         });
     }
-    
+
     // Controls
     const deleteAllElement = document.getElementById('deleteall');
     const zoomInElement = document.getElementById('zoom-in');
     const zoomOutElement = document.getElementById('zoom-out');
     const resetElement = document.getElementById('reset');
     const centerElement = document.getElementById('center');
-    
+
     if (deleteAllElement) deleteAllElement.addEventListener('click', deleteAllSegments);
     if (zoomInElement) zoomInElement.addEventListener('click', zoomIn);
     if (zoomOutElement) zoomOutElement.addEventListener('click', zoomOut);
@@ -844,7 +1135,14 @@ document.addEventListener("DOMContentLoaded", function() {
             drawCanvas();
         }, 100); // Piccolo delay per attendere il cambio viewport
     });
-    
+
+    // Listener per tasto ESC - annulla disegno corrente
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' || event.key === 'Esc') {
+            cancelCurrentDrawing();
+        }
+    });
+
     // Initialize
     resizeCanvas();
     updateSegmentsList();

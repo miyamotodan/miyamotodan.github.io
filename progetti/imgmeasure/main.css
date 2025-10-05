@@ -4,13 +4,65 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+/* === VARIABILI CSS PER TEMI === */
+:root {
+    /* Tema Scuro (default) */
+    --navbar-bg: #1e1e1e;
+    --navbar-text: #ffffff;
+    --canvas-bg: #2d2d2d;
+    --segment-color: rgb(0, 212, 255);
+    --segment-color-alpha: rgba(0, 212, 255, 0.7);
+    --segment-selected: rgb(255, 0, 255);
+    --segment-selected-alpha: rgba(255, 0, 255, 0.7);
+    --preview-color: rgb(255, 170, 0);
+    --preview-color-alpha: rgba(255, 170, 0, 0.6);
+    --preview-fill-alpha: rgba(255, 170, 0, 0.15);
+    --temp-point-color: rgba(0, 212, 255, 0.8);
+    --label-bg: rgba(255, 0, 255, 0.85);
+    --label-text: #ffffff;
+}
+
+[data-theme="light"] {
+    /* Tema Chiaro */
+    --navbar-bg: #2c3e50;
+    --navbar-text: #ffffff;
+    --canvas-bg: #f8f9fa;
+    --segment-color: rgb(231, 76, 60);
+    --segment-color-alpha: rgba(231, 76, 60, 0.7);
+    --segment-selected: rgb(52, 152, 219);
+    --segment-selected-alpha: rgba(52, 152, 219, 0.8);
+    --preview-color: rgb(243, 156, 18);
+    --preview-color-alpha: rgba(243, 156, 18, 0.6);
+    --preview-fill-alpha: rgba(243, 156, 18, 0.15);
+    --temp-point-color: rgba(46, 204, 113, 0.7);
+    --label-bg: rgba(52, 152, 219, 0.9);
+    --label-text: #ffffff;
+}
+
+[data-theme="contrast"] {
+    /* Alto Contrasto */
+    --navbar-bg: #000000;
+    --navbar-text: #ffffff;
+    --canvas-bg: #000000;
+    --segment-color: rgb(255, 255, 0);
+    --segment-color-alpha: rgba(255, 255, 0, 0.9);
+    --segment-selected: rgb(255, 0, 255);
+    --segment-selected-alpha: rgba(255, 0, 255, 0.9);
+    --preview-color: rgb(0, 255, 255);
+    --preview-color-alpha: rgba(0, 255, 255, 0.8);
+    --preview-fill-alpha: rgba(0, 255, 255, 0.2);
+    --temp-point-color: rgba(255, 255, 0, 0.9);
+    --label-bg: rgba(255, 0, 255, 0.95);
+    --label-text: #000000;
+}
+
 html, body {
     margin: 0;
     padding: 0;
     height: 100%;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f8f9fa;
+    background: var(--canvas-bg);
 }
 
 /* Layout principale mobile-first */
@@ -25,6 +77,8 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     min-height: 50px;
     padding: 0.5rem 1rem;
+    background-color: var(--navbar-bg) !important;
+    color: var(--navbar-text);
 }
 
 .navbar-brand {
@@ -40,7 +94,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #f8f9fa;
+    background: var(--canvas-bg);
     overflow: hidden;
     padding-bottom: 40px; /* Spazio per status bar */
 }
@@ -217,6 +271,50 @@ body {
     border-bottom: 1px solid #dee2e6;
 }
 
+/* Help Modal styling */
+#helpModal .modal-content {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+#helpModal .modal-header {
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+#helpModal .card {
+    border-left: 4px solid #0d6efd;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#helpModal .card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#helpModal .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 600;
+    color: #495057;
+}
+
+#helpModal kbd {
+    background: #343a40;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#helpModal .btn-primary {
+    transition: all 0.3s ease;
+}
+
+#helpModal .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13,110,253,0.4);
+}
+
 /* Button group styling per toolbar */
 .btn-group .btn {
     border-right: 1px solid rgba(255, 255, 255, 0.3);
@@ -224,6 +322,27 @@ body {
 
 .btn-group .btn:last-child {
     border-right: none;
+}
+
+/* Pulsanti modalità disegno e toggle */
+.btn-group .btn.active,
+.btn.active {
+    background-color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+}
+
+/* Toggle preview button - stile specifico per occhio */
+#toggle-preview {
+    transition: all 0.3s ease;
+}
+
+#toggle-preview.active i {
+    color: #28a745;
+}
+
+#toggle-preview:not(.active) i {
+    color: #dc3545;
+    opacity: 0.6;
 }
 
 /* Animazioni smooth */
