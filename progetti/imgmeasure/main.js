@@ -830,10 +830,17 @@ function findNearestEndpoint(x, y) {
     let nearestPoint = null;
     let minDistance = SNAP_DISTANCE;
 
+    if (DEBUG_MODE && points.length > 0) {
+        addDebugLog('SNAP_CHECK_START', `segments.length=${segments.length}, checking pos=(${x.toFixed(1)},${y.toFixed(1)})`);
+    }
+
     // Cerca tra tutti gli endpoint dei segmenti esistenti
-    segments.forEach(segment => {
+    segments.forEach((segment, idx) => {
         // Controlla punto iniziale
         const distToStart = getPixelDistance({ x, y }, segment.start);
+        if (DEBUG_MODE && points.length > 0) {
+            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)}`);
+        }
         if (distToStart < minDistance) {
             minDistance = distToStart;
             nearestPoint = { ...segment.start };
@@ -841,6 +848,9 @@ function findNearestEndpoint(x, y) {
 
         // Controlla punto finale
         const distToEnd = getPixelDistance({ x, y }, segment.end);
+        if (DEBUG_MODE && points.length > 0) {
+            addDebugLog('SNAP_DIST', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) dist=${distToEnd.toFixed(1)}`);
+        }
         if (distToEnd < minDistance) {
             minDistance = distToEnd;
             nearestPoint = { ...segment.end };
