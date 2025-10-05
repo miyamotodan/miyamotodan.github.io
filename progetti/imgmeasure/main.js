@@ -442,6 +442,8 @@ function handlePointCreation(clientX, clientY) {
 
     // 1. Se c'è un disegno in corso (primo punto già piazzato), PRIORITÀ AL DISEGNO
     if (points.length > 0) {
+        addDebugLog('CLOSING_SEGMENT', `points[0]=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) clickPos=(${coords.x.toFixed(1)},${coords.y.toFixed(1)})`);
+
         // Se c'è uno snapPreviewPoint attivo, usalo direttamente
         if (snapPreviewPoint) {
             addDebugLog('SNAP_FOUND', `chiusura con preview snap (${snapPreviewPoint.x.toFixed(1)}, ${snapPreviewPoint.y.toFixed(1)})`);
@@ -500,11 +502,6 @@ function handleMouseDown(event) {
 }
 
 function handlePointerMove(event) {
-    // Log SEMPRE per debug
-    if (DEBUG_MODE) {
-        addDebugLog('POINTER_MOVE_RAW', `type=${event.pointerType}, points.length=${points.length}, isPanning=${isPanning}`);
-    }
-
     // Gestisce pennino e touch stylus
     if (event.pointerType === 'pen' || event.pointerType === 'touch') {
         if (showPreview && points.length === 1 && !isPanning && !isMousePanning) {
@@ -516,10 +513,7 @@ function handlePointerMove(event) {
             const snapPoint = findNearestEndpoint(coords.x, coords.y);
             snapPreviewPoint = snapPoint;
 
-            addDebugLog('POINTER_SNAP_SET', `snapPreviewPoint=${snapPoint ? 'YES' : 'NO'}`);
             drawCanvas();
-        } else if (DEBUG_MODE && points.length > 0) {
-            addDebugLog('POINTER_BLOCKED', `preview=${showPreview}, points=${points.length}, isPanning=${isPanning}, isMousePan=${isMousePanning}`);
         }
     }
 }
@@ -753,6 +747,7 @@ function addPoint(x, y) {
     }
 
     points.push({ x, y });
+    addDebugLog('ADD_POINT', `aggiunto punto ${points.length}: (${x.toFixed(1)}, ${y.toFixed(1)}) - points[0]=${points[0] ? `(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)})` : 'null'}`);
 
     if (points.length === 2) {
         createSegment();
@@ -862,10 +857,11 @@ function findNearestEndpoint(x, y) {
     let nearestPoint = null;
     let minDistance = SNAP_DISTANCE;
 
-    if (DEBUG_MODE && points.length > 0) {
-        const segInfo = segments.map((s, i) => `[${i}]:(${s.start.x.toFixed(0)},${s.start.y.toFixed(0)})->(${s.end.x.toFixed(0)},${s.end.y.toFixed(0)})`).join(' ');
-        addDebugLog('SNAP_CHECK_START', `segments.length=${segments.length} ${segInfo}, checking pos=(${x.toFixed(1)},${y.toFixed(1)}), hasFirstPoint=${points.length > 0}`);
-    }
+    // Log ridotto: solo quando c'è un disegno in corso
+    // if (DEBUG_MODE && points.length > 0) {
+    //     const segInfo = segments.map((s, i) => `[${i}]:(${s.start.x.toFixed(0)},${s.start.y.toFixed(0)})->(${s.end.x.toFixed(0)},${s.end.y.toFixed(0)})`).join(' ');
+    //     addDebugLog('SNAP_CHECK_START', `segments.length=${segments.length} ${segInfo}, checking pos=(${x.toFixed(1)},${y.toFixed(1)}), hasFirstPoint=${points.length > 0}`);
+    // }
 
     // Cerca tra tutti gli endpoint dei segmenti esistenti
     segments.forEach((segment, idx) => {
@@ -877,10 +873,11 @@ function findNearestEndpoint(x, y) {
                             Math.abs(points[0].x - segment.start.x) < 0.1 &&
                             Math.abs(points[0].y - segment.start.y) < 0.1;
 
-        if (DEBUG_MODE && points.length > 0) {
+        // Log solo se snap trovato E c'è un disegno in corso
+        if (DEBUG_MODE && points.length > 0 && distToStart <= SNAP_DISTANCE) {
             const dx = Math.abs(points[0].x - segment.start.x);
             const dy = Math.abs(points[0].y - segment.start.y);
-            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)} pt0=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) dx=${dx.toFixed(3)} dy=${dy.toFixed(3)} isFirstPt=${isFirstPoint}`);
+            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) pt0=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) dx=${dx.toFixed(3)} dy=${dy.toFixed(3)} isFirstPt=${isFirstPoint}`);
         }
 
         if (!isFirstPoint && distToStart <= minDistance) {
@@ -896,8 +893,9 @@ function findNearestEndpoint(x, y) {
                                 Math.abs(points[0].x - segment.end.x) < 0.1 &&
                                 Math.abs(points[0].y - segment.end.y) < 0.1;
 
-        if (DEBUG_MODE && points.length > 0) {
-            addDebugLog('SNAP_DIST', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) dist=${distToEnd.toFixed(1)} isFirstPt=${isFirstPointEnd}`);
+        // Log solo se snap trovato E c'è un disegno in corso
+        if (DEBUG_MODE && points.length > 0 && distToEnd <= SNAP_DISTANCE) {
+            addDebugLog('SNAP_DIST_END', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) pt0=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) isFirstPt=${isFirstPointEnd}`);
         }
 
         if (!isFirstPointEnd && distToEnd <= minDistance) {
@@ -906,10 +904,9 @@ function findNearestEndpoint(x, y) {
         }
     });
 
-    if (DEBUG_MODE) {
-        // Log tutte le chiamate con dettagli
-        const inDrawing = points.length > 0 ? 'IN_DRAWING' : 'NO_DRAWING';
-        addDebugLog('SNAP_CHECK', `${inDrawing} pos=(${x.toFixed(1)},${y.toFixed(1)}) minDist=${minDistance.toFixed(1)} threshold=${SNAP_DISTANCE} found=${nearestPoint ? 'YES' : 'NO'}`);
+    // Log ridotto: solo quando trova snap
+    if (DEBUG_MODE && nearestPoint && points.length > 0) {
+        addDebugLog('SNAP_FOUND_PREVIEW', `snap a (${nearestPoint.x.toFixed(1)},${nearestPoint.y.toFixed(1)})`);
     }
 
     return nearestPoint;
