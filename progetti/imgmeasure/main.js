@@ -839,9 +839,10 @@ function findNearestEndpoint(x, y) {
         }
     });
 
-    if (DEBUG_MODE && points.length > 0) {
-        // Log solo quando c'è un disegno in corso (per evitare spam)
-        addDebugLog('SNAP_CHECK', `pos=(${x.toFixed(1)},${y.toFixed(1)}) minDist=${minDistance.toFixed(1)} found=${nearestPoint ? 'YES' : 'NO'}`);
+    if (DEBUG_MODE) {
+        // Log tutte le chiamate con dettagli
+        const inDrawing = points.length > 0 ? 'IN_DRAWING' : 'NO_DRAWING';
+        addDebugLog('SNAP_CHECK', `${inDrawing} pos=(${x.toFixed(1)},${y.toFixed(1)}) minDist=${minDistance.toFixed(1)} threshold=${SNAP_DISTANCE} found=${nearestPoint ? 'YES' : 'NO'}`);
     }
 
     return nearestPoint;
