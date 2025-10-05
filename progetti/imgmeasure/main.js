@@ -864,27 +864,41 @@ function findNearestEndpoint(x, y) {
 
     if (DEBUG_MODE && points.length > 0) {
         const segInfo = segments.map((s, i) => `[${i}]:(${s.start.x.toFixed(0)},${s.start.y.toFixed(0)})->(${s.end.x.toFixed(0)},${s.end.y.toFixed(0)})`).join(' ');
-        addDebugLog('SNAP_CHECK_START', `segments.length=${segments.length} ${segInfo}, checking pos=(${x.toFixed(1)},${y.toFixed(1)})`);
+        addDebugLog('SNAP_CHECK_START', `segments.length=${segments.length} ${segInfo}, checking pos=(${x.toFixed(1)},${y.toFixed(1)}), hasFirstPoint=${points.length > 0}`);
     }
 
     // Cerca tra tutti gli endpoint dei segmenti esistenti
     segments.forEach((segment, idx) => {
         // Controlla punto iniziale
         const distToStart = getPixelDistance({ x, y }, segment.start);
+
+        // ESCLUDI il punto che corrisponde al primo punto del disegno corrente
+        const isFirstPoint = points.length > 0 &&
+                            Math.abs(points[0].x - segment.start.x) < 0.1 &&
+                            Math.abs(points[0].y - segment.start.y) < 0.1;
+
         if (DEBUG_MODE && points.length > 0) {
-            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)}`);
+            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)} isFirstPt=${isFirstPoint}`);
         }
-        if (distToStart <= minDistance) { // <= invece di < per includere esattamente threshold
+
+        if (!isFirstPoint && distToStart <= minDistance) {
             minDistance = distToStart;
             nearestPoint = { ...segment.start };
         }
 
         // Controlla punto finale
         const distToEnd = getPixelDistance({ x, y }, segment.end);
+
+        // ESCLUDI il punto che corrisponde al primo punto del disegno corrente
+        const isFirstPointEnd = points.length > 0 &&
+                                Math.abs(points[0].x - segment.end.x) < 0.1 &&
+                                Math.abs(points[0].y - segment.end.y) < 0.1;
+
         if (DEBUG_MODE && points.length > 0) {
-            addDebugLog('SNAP_DIST', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) dist=${distToEnd.toFixed(1)}`);
+            addDebugLog('SNAP_DIST', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) dist=${distToEnd.toFixed(1)} isFirstPt=${isFirstPointEnd}`);
         }
-        if (distToEnd <= minDistance) { // <= invece di < per includere esattamente threshold
+
+        if (!isFirstPointEnd && distToEnd <= minDistance) {
             minDistance = distToEnd;
             nearestPoint = { ...segment.end };
         }
