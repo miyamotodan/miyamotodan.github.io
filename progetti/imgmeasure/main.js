@@ -500,12 +500,13 @@ function handleMouseDown(event) {
 }
 
 function handlePointerMove(event) {
+    // Log SEMPRE per debug
+    if (DEBUG_MODE) {
+        addDebugLog('POINTER_MOVE_RAW', `type=${event.pointerType}, points.length=${points.length}, isPanning=${isPanning}`);
+    }
+
     // Gestisce pennino e touch stylus
     if (event.pointerType === 'pen' || event.pointerType === 'touch') {
-        if (DEBUG_MODE && points.length > 0) {
-            addDebugLog('POINTER_MOVE', `type=${event.pointerType}, points.length=${points.length}`);
-        }
-
         if (showPreview && points.length === 1 && !isPanning && !isMousePanning) {
             event.preventDefault();
             const coords = getCanvasCoordinates(event.clientX, event.clientY);
@@ -515,7 +516,10 @@ function handlePointerMove(event) {
             const snapPoint = findNearestEndpoint(coords.x, coords.y);
             snapPreviewPoint = snapPoint;
 
+            addDebugLog('POINTER_SNAP_SET', `snapPreviewPoint=${snapPoint ? 'YES' : 'NO'}`);
             drawCanvas();
+        } else if (DEBUG_MODE && points.length > 0) {
+            addDebugLog('POINTER_BLOCKED', `preview=${showPreview}, points=${points.length}, isPanning=${isPanning}, isMousePan=${isMousePanning}`);
         }
     }
 }
