@@ -396,6 +396,9 @@ canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
+// Pointer events per supporto pennino/stylus
+canvas.addEventListener('pointermove', handlePointerMove, { passive: false });
+
 // Mouse events per desktop pan
 canvas.addEventListener('mousedown', handleMouseDown);
 canvas.addEventListener('mousemove', handleMouseMove);
@@ -493,6 +496,27 @@ function handleMouseDown(event) {
         mouseStartX = event.clientX;
         mouseStartY = event.clientY;
         canvas.style.cursor = 'move';
+    }
+}
+
+function handlePointerMove(event) {
+    // Gestisce pennino e touch stylus
+    if (event.pointerType === 'pen' || event.pointerType === 'touch') {
+        if (DEBUG_MODE && points.length > 0) {
+            addDebugLog('POINTER_MOVE', `type=${event.pointerType}, points.length=${points.length}`);
+        }
+
+        if (showPreview && points.length === 1 && !isPanning && !isMousePanning) {
+            event.preventDefault();
+            const coords = getCanvasCoordinates(event.clientX, event.clientY);
+            previewPoint = coords;
+
+            // Cerca snap agli endpoint
+            const snapPoint = findNearestEndpoint(coords.x, coords.y);
+            snapPreviewPoint = snapPoint;
+
+            drawCanvas();
+        }
     }
 }
 
