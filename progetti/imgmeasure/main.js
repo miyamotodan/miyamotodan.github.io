@@ -12,7 +12,7 @@ const segmentsCount = document.getElementById('segments-count');
 // Debug logging
 const DEBUG_MODE = true; // Imposta a false per nascondere il pulsante debug
 let debugLog = [];
-const MAX_DEBUG_ENTRIES = 200; // Aumentato per vedere più storia
+const MAX_DEBUG_ENTRIES = 1000; // Aumentato per vedere più storia
 
 let img = new Image();
 let points = [];
