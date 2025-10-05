@@ -1064,28 +1064,34 @@ function showTouchFeedback(x, y) {
 function addDebugLog(eventType, details) {
     if (!DEBUG_MODE) return; // Non loggare se debug è disabilitato
 
-    const timestamp = new Date().toLocaleTimeString('it-IT', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        fractionalSecondDigits: 3
-    });
+    try {
+        // Timestamp semplice compatibile con tutti i browser
+        const now = new Date();
+        const timestamp = now.toTimeString().split(' ')[0] + '.' + now.getMilliseconds().toString().padStart(3, '0');
 
-    const logEntry = {
-        time: timestamp,
-        event: eventType,
-        details: details
-    };
+        const logEntry = {
+            time: timestamp,
+            event: eventType,
+            details: details
+        };
 
-    debugLog.push(logEntry);
+        debugLog.push(logEntry);
 
-    // Mantieni solo le ultime MAX_DEBUG_ENTRIES voci
-    if (debugLog.length > MAX_DEBUG_ENTRIES) {
-        debugLog.shift();
+        // Mantieni solo le ultime MAX_DEBUG_ENTRIES voci
+        if (debugLog.length > MAX_DEBUG_ENTRIES) {
+            debugLog.shift();
+        }
+
+        updateDebugDisplay();
+    } catch (error) {
+        // Fallback se c'è un errore
+        console.error('Debug log error:', error);
+        debugLog.push({
+            time: Date.now(),
+            event: eventType,
+            details: details
+        });
     }
-
-    updateDebugDisplay();
 }
 
 function updateDebugDisplay() {
