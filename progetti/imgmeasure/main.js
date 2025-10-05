@@ -38,9 +38,10 @@ let panelOpen = false;
 let segmentCounter = 1;
 
 // Drawing mode
-let drawingMode = 'segment'; // 'segment' or 'rectangle'
+let drawingMode = 'segment'; // 'segment', 'rectangle', or 'continuous'
 let previewPoint = null; // Per l'anteprima del rettangolo/segmento
 let showPreview = true; // Flag per attivare/disattivare l'anteprima
+let snapPreviewPoint = null; // Punto di snap visualizzato in anteprima
 
 // Theme
 let currentTheme = 'dark'; // 'light', 'dark', 'contrast'
@@ -52,6 +53,8 @@ const PREVIEW_LINE_WIDTH = 3;           // Spessore anteprima (segmento/rettango
 const CONTROL_POINT_RADIUS = 4;         // Raggio punto controllo normale
 const CONTROL_POINT_SELECTED_RADIUS = 6; // Raggio punto controllo selezionato
 const CONTROL_POINT_TEMP_RADIUS = 5;    // Raggio punti temporanei
+const SNAP_DISTANCE = 20;               // Distanza massima per snap agli endpoint (in pixel immagine)
+const SEGMENT_SELECT_DISTANCE = 15;     // Distanza massima per selezione segmento
 
 // === FUNZIONI CORE ===
 function loadImage(event) {
@@ -148,11 +151,16 @@ function drawCanvas() {
 
     // Disegna anteprima se attiva e c'è un punto iniziale
     if (showPreview && points.length === 1 && previewPoint) {
-        if (drawingMode === 'segment') {
+        if (drawingMode === 'segment' || drawingMode === 'continuous') {
             drawSegmentPreview();
         } else if (drawingMode === 'rectangle') {
             drawRectanglePreview();
         }
+    }
+
+    // Disegna indicatore di snap se presente
+    if (snapPreviewPoint) {
+        drawSnapIndicator(snapPreviewPoint);
     }
 
     ctx.restore();
@@ -313,6 +321,37 @@ function drawRectanglePreview() {
     ctx.setLineDash([]);
 }
 
+function drawSnapIndicator(point) {
+    // Converti coordinate in coordinate canvas
+    let x, y;
+    if (img.width && img.height && scaleFactor !== 1) {
+        x = (point.x * scaleFactor) + imgX;
+        y = (point.y * scaleFactor) + imgY;
+    } else {
+        x = point.x + imgX;
+        y = point.y + imgY;
+    }
+
+    // Disegna un cerchio pulsante per indicare lo snap
+    const snapColor = getComputedStyle(document.documentElement).getPropertyValue('--segment-selected-alpha').trim();
+
+    ctx.strokeStyle = snapColor;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 3;
+
+    // Cerchio esterno
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.fill();
+
+    // Cerchio interno
+    ctx.fillStyle = snapColor;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
 function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--label-bg').trim();
     const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
@@ -371,29 +410,55 @@ let clickCooldown = 100; // ms
 // Funzione centralizzata per gestire tutti i click/tap
 function handlePointCreation(clientX, clientY) {
     const currentTime = Date.now();
-    
+
     // Prevenire eventi duplicati
     if (currentTime - lastClickTime < clickCooldown) {
         return false;
     }
     lastClickTime = currentTime;
-    
+
     // Verifica condizioni di blocco
     if (isMultiTouch || isPanning || isMousePanning) {
         return false;
     }
-    
+
     const coords = getCanvasCoordinates(clientX, clientY);
     showTouchFeedback(clientX, clientY);
-    
-    // Prova a selezionare un segmento esistente
+
+    // SOLUZIONE 4: Logica combinata
+
+    // 1. Se c'è un disegno in corso (primo punto già piazzato), PRIORITÀ AL DISEGNO
+    if (points.length > 0) {
+        // Cerca snap agli endpoint esistenti
+        const snapPoint = findNearestEndpoint(coords.x, coords.y);
+        if (snapPoint) {
+            // Snap trovato! Usa il punto esatto dell'endpoint
+            addPoint(snapPoint.x, snapPoint.y);
+            showToast('Punto agganciato all\'endpoint', 'success');
+        } else {
+            // Nessuno snap, usa coordinate normali
+            addPoint(coords.x, coords.y);
+        }
+        return true;
+    }
+
+    // 2. Nessun disegno in corso: prima prova lo snap per iniziare da un endpoint
+    const snapPoint = findNearestEndpoint(coords.x, coords.y);
+    if (snapPoint) {
+        // Inizia un nuovo disegno da un endpoint esistente
+        addPoint(snapPoint.x, snapPoint.y);
+        showToast('Punto agganciato all\'endpoint', 'success');
+        return true;
+    }
+
+    // 3. Nessuno snap: prova a selezionare un segmento esistente
     if (selectSegment(coords.x, coords.y)) {
         drawCanvas();
         updateSegmentsList();
         return true; // Evento gestito
     }
-    
-    // Crea/continua la creazione di un segmento
+
+    // 4. Niente di tutto ciò: crea nuovo punto
     addPoint(coords.x, coords.y);
     return true; // Evento gestito
 }
@@ -427,7 +492,21 @@ function handleMouseMove(event) {
         // Aggiorna l'anteprima (segmento o rettangolo)
         const coords = getCanvasCoordinates(event.clientX, event.clientY);
         previewPoint = coords;
+
+        // Cerca snap agli endpoint
+        const snapPoint = findNearestEndpoint(coords.x, coords.y);
+        snapPreviewPoint = snapPoint;
+
         drawCanvas();
+    } else {
+        // Anche senza disegno in corso, mostra snap indicator
+        const coords = getCanvasCoordinates(event.clientX, event.clientY);
+        const snapPoint = findNearestEndpoint(coords.x, coords.y);
+
+        if (snapPoint !== snapPreviewPoint) {
+            snapPreviewPoint = snapPoint;
+            drawCanvas();
+        }
     }
 }
 
@@ -502,6 +581,11 @@ function handleTouchMove(event) {
             // Aggiorna l'anteprima (segmento o rettangolo) durante il movimento
             const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
             previewPoint = coords;
+
+            // Cerca snap agli endpoint
+            const snapPoint = findNearestEndpoint(coords.x, coords.y);
+            snapPreviewPoint = snapPoint;
+
             drawCanvas();
         }
     } else if (event.touches.length === 2) {
@@ -602,6 +686,7 @@ function cancelCurrentDrawing() {
     if (points.length > 0) {
         points = [];
         previewPoint = null;
+        snapPreviewPoint = null;
         drawCanvas();
         showToast('Disegno annullato', 'info');
         return true;
@@ -622,10 +707,30 @@ function createSegment() {
         segments.push(segment);
         selectedSegment = segment;
         points = [];
+        previewPoint = null; // Reset preview per evitare bug
 
         updateMeasurement();
         updateSegmentsList();
         showToast('Nuovo segmento creato', 'success');
+    } else if (drawingMode === 'continuous') {
+        // Modalità segmento continuativo
+        const segment = {
+            id: segmentCounter++,
+            name: `Cont ${segmentCounter - 1}`,
+            start: points[0],
+            end: points[1]
+        };
+
+        segments.push(segment);
+        selectedSegment = segment;
+
+        // In modalità continuativa, il punto finale diventa il punto iniziale del prossimo segmento
+        points = [points[1]];
+        // Non resettiamo previewPoint per mantenere l'anteprima
+
+        updateMeasurement();
+        updateSegmentsList();
+        showToast('Segmento aggiunto alla catena', 'success');
     } else if (drawingMode === 'rectangle') {
         // Modalità rettangolo: crea 4 segmenti
         const minX = Math.min(points[0].x, points[1].x);
@@ -673,6 +778,30 @@ function getPixelDistance(point1, point2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+function findNearestEndpoint(x, y) {
+    let nearestPoint = null;
+    let minDistance = SNAP_DISTANCE;
+
+    // Cerca tra tutti gli endpoint dei segmenti esistenti
+    segments.forEach(segment => {
+        // Controlla punto iniziale
+        const distToStart = getPixelDistance({ x, y }, segment.start);
+        if (distToStart < minDistance) {
+            minDistance = distToStart;
+            nearestPoint = { ...segment.start };
+        }
+
+        // Controlla punto finale
+        const distToEnd = getPixelDistance({ x, y }, segment.end);
+        if (distToEnd < minDistance) {
+            minDistance = distToEnd;
+            nearestPoint = { ...segment.end };
+        }
+    });
+
+    return nearestPoint;
+}
+
 function calculateDistance(point1, point2) {
     const pixelDistance = getPixelDistance(point1, point2);
     
@@ -687,11 +816,11 @@ function calculateDistance(point1, point2) {
 function selectSegment(x, y) {
     let newSelectedSegment = null;
     let minDistance = Infinity;
-    
+
     // Trova il segmento più vicino
     segments.forEach(segment => {
         const distance = distanceToSegment(x, y, segment);
-        if (distance < 15 && distance < minDistance) { // Area di selezione più ampia per mobile
+        if (distance < SEGMENT_SELECT_DISTANCE && distance < minDistance) {
             minDistance = distance;
             newSelectedSegment = segment;
         }
@@ -1063,13 +1192,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Drawing mode buttons
     const modeSegmentBtn = document.getElementById('mode-segment');
+    const modeContinuousBtn = document.getElementById('mode-continuous');
     const modeRectangleBtn = document.getElementById('mode-rectangle');
 
     if (modeSegmentBtn) {
         modeSegmentBtn.addEventListener('click', () => {
             drawingMode = 'segment';
             modeSegmentBtn.classList.add('active');
-            modeRectangleBtn.classList.remove('active');
+            modeContinuousBtn?.classList.remove('active');
+            modeRectangleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
@@ -1077,15 +1208,37 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    if (modeContinuousBtn) {
+        modeContinuousBtn.addEventListener('click', () => {
+            drawingMode = 'continuous';
+            modeContinuousBtn.classList.add('active');
+            modeSegmentBtn?.classList.remove('active');
+            modeRectangleBtn?.classList.remove('active');
+            points = []; // Reset punti temporanei
+            previewPoint = null;
+            drawCanvas();
+            showToast('Modalità Segmento Continuativo attivata', 'info');
+        });
+    }
+
     if (modeRectangleBtn) {
         modeRectangleBtn.addEventListener('click', () => {
             drawingMode = 'rectangle';
             modeRectangleBtn.classList.add('active');
-            modeSegmentBtn.classList.remove('active');
+            modeSegmentBtn?.classList.remove('active');
+            modeContinuousBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
             showToast('Modalità Rettangolo attivata', 'info');
+        });
+    }
+
+    // Cancel drawing button
+    const cancelDrawingBtn = document.getElementById('cancel-drawing');
+    if (cancelDrawingBtn) {
+        cancelDrawingBtn.addEventListener('click', () => {
+            cancelCurrentDrawing();
         });
     }
 

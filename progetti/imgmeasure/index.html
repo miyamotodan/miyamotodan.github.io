@@ -33,8 +33,14 @@
                         <button class="btn btn-outline-light active" id="mode-segment" title="Modalità Segmento">
                             <i class="fas fa-minus"></i>
                         </button>
+                        <button class="btn btn-outline-light" id="mode-continuous" title="Modalità Segmento Continuativo">
+                            <i class="fas fa-wave-square"></i>
+                        </button>
                         <button class="btn btn-outline-light" id="mode-rectangle" title="Modalità Rettangolo">
                             <i class="fas fa-square"></i>
+                        </button>
+                        <button class="btn btn-outline-warning" id="cancel-drawing" title="Annulla Disegno (ESC)">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
@@ -244,6 +250,7 @@
                             </div>
                             <div class="card-body">
                                 <p><i class="fas fa-minus text-danger me-2"></i><strong>Segmento:</strong> Clicca due volte per creare una linea di misura singola</p>
+                                <p><i class="fas fa-wave-square text-danger me-2"></i><strong>Continuativo:</strong> Crea segmenti consecutivi - ogni punto finale diventa l'inizio del successivo (ideale per polilinee e percorsi)</p>
                                 <p class="mb-0"><i class="fas fa-square text-danger me-2"></i><strong>Rettangolo:</strong> Clicca due vertici opposti per creare un rettangolo (4 segmenti) - utile per misurare larghezza e altezza simultaneamente</p>
                             </div>
                         </div>
@@ -269,17 +276,28 @@
 
                         <div class="card mb-3">
                             <div class="card-header">
-                                <i class="fas fa-keyboard me-2"></i><strong>6. Scorciatoie</strong>
+                                <i class="fas fa-magnet me-2"></i><strong>6. Aggancio Automatico (Snap)</strong>
                             </div>
                             <div class="card-body">
-                                <p class="mb-2"><kbd>ESC</kbd> - Annulla il disegno corrente (dopo il primo punto)</p>
+                                <p class="mb-2">Quando clicchi vicino a un punto esistente (entro 20px), il nuovo punto si aggancia automaticamente all'endpoint per massima precisione.</p>
+                                <p class="mb-2"><strong>Indicatore visivo:</strong> Un cerchio colorato appare quando il cursore è vicino a un punto agganciabile</p>
+                                <p class="mb-0"><strong>Utile per:</strong> Chiudere forme, creare percorsi continui precisi, connettere misure multiple</p>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <i class="fas fa-keyboard me-2"></i><strong>7. Scorciatoie e Controlli</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><kbd>ESC</kbd> o <i class="fas fa-times text-warning"></i> - Annulla il disegno corrente (utile in modalità continuativa per terminare la catena)</p>
                                 <p class="mb-0"><strong>Clic su primo punto:</strong> Deseleziona i segmenti per pulire la vista dalle etichette</p>
                             </div>
                         </div>
 
                         <div class="card mb-3">
                             <div class="card-header">
-                                <i class="fas fa-palette me-2"></i><strong>7. Temi</strong>
+                                <i class="fas fa-palette me-2"></i><strong>8. Temi</strong>
                             </div>
                             <div class="card-body">
                                 Scegli tra 3 temi per migliorare la visibilità:
