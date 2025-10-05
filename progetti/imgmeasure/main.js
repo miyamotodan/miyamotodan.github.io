@@ -406,6 +406,7 @@ let mouseStartY = 0;
 // Variabile per prevenire eventi duplicati
 let lastClickTime = 0;
 let clickCooldown = 100; // ms
+let lastTouchEndTime = 0; // Per bloccare eventi mouse dopo touch
 
 // Funzione centralizzata per gestire tutti i click/tap
 function handlePointCreation(clientX, clientY) {
@@ -518,11 +519,16 @@ function handleMouseUp() {
 }
 
 function handleCanvasClick(event) {
-    // Su tablet con pennino, previeni eventi mouse duplicati dopo touch
-    if (event.pointerType === 'touch' || event.sourceCapabilities?.firesTouchEvents) {
-        return; // Ignora eventi mouse generati da touch
-    }
     event.preventDefault();
+
+    const currentTime = Date.now();
+    // Su tablet con pennino, previeni eventi mouse duplicati dopo touch
+    // Se è passato meno di 500ms dall'ultimo touchEnd, ignora il click
+    if (currentTime - lastTouchEndTime < 500) {
+        console.log('Click ignorato: troppo vicino a touchEnd');
+        return;
+    }
+
     handlePointCreation(event.clientX, event.clientY);
 }
 
@@ -606,7 +612,7 @@ function handleTouchMove(event) {
 
 function handleTouchEnd(event) {
     event.preventDefault();
-    
+
     if (event.touches.length === 0) {
         // All fingers lifted
         if (!isPanning && !isMultiTouch && touches.length === 1) {
@@ -614,11 +620,14 @@ function handleTouchEnd(event) {
             const touch = touches[0];
             handlePointCreation(touch.clientX, touch.clientY);
         }
-        
+
         isPanning = false;
         isMultiTouch = false;
+
+        // Aggiorna timestamp per bloccare eventi mouse successivi
+        lastTouchEndTime = Date.now();
     }
-    
+
     touches = Array.from(event.touches);
 }
 
