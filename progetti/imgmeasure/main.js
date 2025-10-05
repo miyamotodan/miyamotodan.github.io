@@ -874,7 +874,7 @@ function findNearestEndpoint(x, y) {
         if (DEBUG_MODE && points.length > 0) {
             addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) dist=${distToStart.toFixed(1)}`);
         }
-        if (distToStart < minDistance) {
+        if (distToStart <= minDistance) { // <= invece di < per includere esattamente threshold
             minDistance = distToStart;
             nearestPoint = { ...segment.start };
         }
@@ -884,7 +884,7 @@ function findNearestEndpoint(x, y) {
         if (DEBUG_MODE && points.length > 0) {
             addDebugLog('SNAP_DIST', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) dist=${distToEnd.toFixed(1)}`);
         }
-        if (distToEnd < minDistance) {
+        if (distToEnd <= minDistance) { // <= invece di < per includere esattamente threshold
             minDistance = distToEnd;
             nearestPoint = { ...segment.end };
         }
