@@ -12,24 +12,37 @@
 
 <body>
     <!-- Toolbar principale -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <nav class="navbar navbar-expand-xl navbar-dark bg-primary sticky-top">
         <div class="container-fluid">
-            <span class="navbar-brand">
-                <i class="fas fa-ruler"></i> Misuratore Distanze
+            <span class="navbar-brand mb-0">
+                <i class="fas fa-ruler"></i> <span class="d-none d-sm-inline">Misuratore Distanze</span>
             </span>
-            
+
+            <!-- Toggler per mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarControls">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
             <!-- Toolbar controls -->
-            <div class="navbar-nav ms-auto d-flex flex-row gap-2">
-                <!-- Toggle Preview -->
+            <div class="collapse navbar-collapse" id="navbarControls">
+            <div class="navbar-nav ms-auto d-flex flex-row flex-wrap gap-1 gap-xl-2 mt-2 mt-xl-0">
+                <!-- 1. FILE/IMMAGINE -->
                 <div class="nav-item">
-                    <button class="btn btn-outline-light btn-sm active" id="toggle-preview" title="Mostra/Nascondi Anteprima">
-                        <i class="fas fa-eye"></i>
-                    </button>
+                    <input type="file" id="upload" accept="image/*" class="d-none">
+                    <label for="upload" class="btn btn-outline-light btn-sm mb-0">
+                        <i class="fas fa-upload"></i> <span class="d-none d-md-inline">Carica</span>
+                    </label>
                 </div>
 
-                <!-- Modalità disegno -->
+                <!-- Separatore visivo -->
+                <div class="vr bg-light opacity-25 d-none d-xl-block"></div>
+
+                <!-- 2. MODALITÀ -->
                 <div class="nav-item">
                     <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-light" id="mode-select" title="Modalità Selezione">
+                            <i class="fas fa-mouse-pointer"></i>
+                        </button>
                         <button class="btn btn-outline-light active" id="mode-segment" title="Modalità Segmento">
                             <i class="fas fa-minus"></i>
                         </button>
@@ -39,43 +52,67 @@
                         <button class="btn btn-outline-light" id="mode-rectangle" title="Modalità Rettangolo">
                             <i class="fas fa-square"></i>
                         </button>
-                        <button class="btn btn-outline-warning" id="cancel-drawing" title="Annulla Disegno (ESC)">
-                            <i class="fas fa-times"></i>
+                    </div>
+                </div>
+
+                <div class="nav-item">
+                    <button class="btn btn-outline-light btn-sm" id="cancel-drawing" title="Annulla Disegno (ESC)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Separatore visivo -->
+                <div class="vr bg-light opacity-25 d-none d-xl-block"></div>
+
+                <!-- 3. VISUALIZZAZIONE -->
+                <div class="nav-item">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-light active" id="toggle-segments" title="Mostra/Nascondi Segmenti">
+                            <i class="fas fa-ruler-combined"></i>
+                        </button>
+                        <button class="btn btn-outline-light active" id="toggle-preview" title="Mostra/Nascondi Anteprima">
+                            <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Upload immagine -->
-                <div class="nav-item">
-                    <input type="file" id="upload" accept="image/*" class="d-none">
-                    <label for="upload" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-upload"></i> <span class="d-none d-md-inline">Carica</span>
-                    </label>
-                </div>
-                
-                <!-- Controlli zoom -->
+                <!-- Separatore visivo -->
+                <div class="vr bg-light opacity-25 d-none d-xl-block"></div>
+
+                <!-- 4. NAVIGAZIONE -->
                 <div class="nav-item">
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-light" id="zoom-out">
+                        <button class="btn btn-outline-light" id="zoom-out" title="Zoom Out">
                             <i class="fas fa-search-minus"></i>
                         </button>
-                        <button class="btn btn-outline-light" id="zoom-in">
+                        <button class="btn btn-outline-light" id="zoom-in" title="Zoom In">
                             <i class="fas fa-search-plus"></i>
                         </button>
-                        <button class="btn btn-outline-light" id="reset">
+                        <button class="btn btn-outline-light" id="reset" title="Reset Vista">
                             <i class="fas fa-expand-arrows-alt"></i>
                         </button>
                     </div>
                 </div>
-                
-                <!-- Elimina tutti -->
+
+                <!-- Separatore visivo -->
+                <div class="vr bg-light opacity-25 d-none d-xl-block"></div>
+
+                <!-- 5. GESTIONE SEGMENTI -->
                 <div class="nav-item">
-                    <button class="btn btn-outline-danger btn-sm" id="deleteall">
-                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Pulisci</span>
-                    </button>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-light" id="undo-btn" title="Annulla ultimo segmento (Ctrl+Z)">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="btn btn-outline-light" id="deleteall" title="Elimina tutti i segmenti">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-                
-                <!-- Theme selector -->
+
+                <!-- Separatore visivo -->
+                <div class="vr bg-light opacity-25 d-none d-xl-block"></div>
+
+                <!-- 6. TEMI -->
                 <div class="nav-item">
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-light" id="theme-light" title="Tema Chiaro">
@@ -90,26 +127,34 @@
                     </div>
                 </div>
 
-                <!-- Settings -->
+                <!-- Separatore visivo -->
+                <div class="vr bg-light opacity-25 d-none d-xl-block"></div>
+
+                <!-- 7. SISTEMA -->
                 <div class="nav-item">
-                    <button class="btn btn-outline-light btn-sm" data-bs-toggle="offcanvas" data-bs-target="#settingsPanel">
+                    <button class="btn btn-outline-light btn-sm" data-bs-toggle="offcanvas" data-bs-target="#settingsPanel" title="Impostazioni">
                         <i class="fas fa-cog"></i>
                     </button>
                 </div>
 
-                <!-- Debug -->
                 <div class="nav-item">
-                    <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#debugModal">
+                    <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#debugModal" title="Debug">
                         <i class="fas fa-bug"></i>
                     </button>
                 </div>
 
-                <!-- Help -->
                 <div class="nav-item">
-                    <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#helpModal">
+                    <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#helpModal" title="Aiuto">
                         <i class="fas fa-question-circle"></i>
                     </button>
                 </div>
+
+                <div class="nav-item">
+                    <button class="btn btn-outline-light btn-sm" id="feedback-btn" title="Lascia un Feedback">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+            </div>
             </div>
         </div>
     </nav>
@@ -402,6 +447,40 @@
                     </div>
                     <div id="debug-log" style="font-family: monospace; font-size: 0.85rem; max-height: 500px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
                         <div class="text-muted">Log eventi pronto...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Feedback -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-heart me-2"></i>Ti sta piacendo ImgMeasure?
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="lead mb-4">Il tuo feedback è prezioso per migliorare l'app!</p>
+                    <p class="text-muted mb-4">
+                        Condividi la tua esperienza, suggerimenti o segnala problemi su GitHub.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="https://github.com/miyamotodan/imgmeasure/issues/new?labels=feedback&template=feedback.md&title=[Feedback]%20"
+                           target="_blank"
+                           class="btn btn-primary btn-lg"
+                           id="feedback-yes-btn">
+                            <i class="fab fa-github me-2"></i>Lascia un Feedback
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="feedback-later-btn">
+                            Magari dopo
+                        </button>
+                        <button type="button" class="btn btn-link text-muted" id="feedback-never-btn">
+                            Non mostrare più
+                        </button>
                     </div>
                 </div>
             </div>

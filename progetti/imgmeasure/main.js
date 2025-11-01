@@ -43,21 +43,29 @@ let panelOpen = false;
 let segmentCounter = 1;
 
 // Drawing mode
-let drawingMode = 'segment'; // 'segment', 'rectangle', or 'continuous'
+let drawingMode = 'segment'; // 'select', 'segment', 'rectangle', or 'continuous'
 let previewPoint = null; // Per l'anteprima del rettangolo/segmento
 let showPreview = true; // Flag per attivare/disattivare l'anteprima
 let snapPreviewPoint = null; // Punto di snap visualizzato in anteprima
+let showSegments = true; // Flag per mostrare/nascondere i segmenti
 
 // Theme
 let currentTheme = 'dark'; // 'light', 'dark', 'contrast'
 
+// Feedback system
+let feedbackShown = false; // Flag per tracciare se il modal è già stato mostrato in questa sessione
+const FEEDBACK_TRIGGER_COUNT = 3; // Numero di segmenti dopo cui mostrare il modal
+
 // === COSTANTI CONFIGURAZIONE GRAFICA ===
-const SEGMENT_LINE_WIDTH = 2;           // Spessore segmento normale
-const SEGMENT_SELECTED_LINE_WIDTH = 3;  // Spessore segmento selezionato
-const PREVIEW_LINE_WIDTH = 3;           // Spessore anteprima (segmento/rettangolo)
-const CONTROL_POINT_RADIUS = 4;         // Raggio punto controllo normale
-const CONTROL_POINT_SELECTED_RADIUS = 6; // Raggio punto controllo selezionato
-const CONTROL_POINT_TEMP_RADIUS = 5;    // Raggio punti temporanei
+// NOTA: Queste dimensioni sono FISSE e indipendenti dallo zoom
+// Vengono divise per zoomFactor durante il rendering per compensare ctx.scale()
+const SEGMENT_LINE_WIDTH = 2;           // Spessore segmento normale (fisso sullo schermo)
+const SEGMENT_SELECTED_LINE_WIDTH = 3;  // Spessore segmento selezionato (fisso sullo schermo)
+const PREVIEW_LINE_WIDTH = 3;           // Spessore anteprima (fisso sullo schermo)
+const CONTROL_POINT_RADIUS = 4;         // Raggio punto controllo normale (fisso sullo schermo)
+const CONTROL_POINT_SELECTED_RADIUS = 6; // Raggio punto controllo selezionato (fisso sullo schermo)
+const CONTROL_POINT_TEMP_RADIUS = 5;    // Raggio punti temporanei (fisso sullo schermo)
+const LABEL_FONT_SIZE = 12;             // Dimensione font etichette (fisso sullo schermo)
 const SNAP_DISTANCE = 20;               // Distanza massima per snap agli endpoint (in pixel immagine)
 const SEGMENT_SELECT_DISTANCE = 15;     // Distanza massima per selezione segmento
 
@@ -146,26 +154,28 @@ function drawCanvas() {
         ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
     }
 
-    // Disegna tutti i segmenti
-    segments.forEach(segment => drawSegment(segment));
+    // Disegna tutti i segmenti solo se showSegments è true
+    if (showSegments) {
+        segments.forEach(segment => drawSegment(segment));
 
-    // Disegna i punti temporanei se ci sono
-    if (points.length > 0) {
-        drawTemporaryPoints();
-    }
-
-    // Disegna anteprima se attiva e c'è un punto iniziale
-    if (showPreview && points.length === 1 && previewPoint) {
-        if (drawingMode === 'segment' || drawingMode === 'continuous') {
-            drawSegmentPreview();
-        } else if (drawingMode === 'rectangle') {
-            drawRectanglePreview();
+        // Disegna i punti temporanei se ci sono
+        if (points.length > 0) {
+            drawTemporaryPoints();
         }
-    }
 
-    // Disegna indicatore di snap se presente
-    if (snapPreviewPoint) {
-        drawSnapIndicator(snapPreviewPoint);
+        // Disegna anteprima se attiva e c'è un punto iniziale
+        if (showPreview && points.length === 1 && previewPoint) {
+            if (drawingMode === 'segment' || drawingMode === 'continuous') {
+                drawSegmentPreview();
+            } else if (drawingMode === 'rectangle') {
+                drawRectanglePreview();
+            }
+        }
+
+        // Disegna indicatore di snap se presente
+        if (snapPreviewPoint) {
+            drawSnapIndicator(snapPreviewPoint);
+        }
     }
 
     ctx.restore();
@@ -194,9 +204,9 @@ function drawSegment(segment) {
         segment === selectedSegment ? '--segment-selected-alpha' : '--segment-color-alpha'
     ).trim();
 
-    // Linea principale
+    // Linea principale - DIMENSIONE FISSA compensata per zoom
     ctx.strokeStyle = segmentColor;
-    ctx.lineWidth = segment === selectedSegment ? SEGMENT_SELECTED_LINE_WIDTH : SEGMENT_LINE_WIDTH;
+    ctx.lineWidth = (segment === selectedSegment ? SEGMENT_SELECTED_LINE_WIDTH : SEGMENT_LINE_WIDTH) / zoomFactor;
     ctx.lineCap = 'round';
 
     ctx.beginPath();
@@ -221,10 +231,12 @@ function drawControlPoint(x, y, isSelected) {
 
     ctx.fillStyle = pointColor;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2 / zoomFactor; // Spessore fisso
 
     ctx.beginPath();
-    ctx.arc(x, y, isSelected ? CONTROL_POINT_SELECTED_RADIUS : CONTROL_POINT_RADIUS, 0, 2 * Math.PI);
+    // Raggio fisso compensato per zoom
+    const radius = (isSelected ? CONTROL_POINT_SELECTED_RADIUS : CONTROL_POINT_RADIUS) / zoomFactor;
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
 }
@@ -247,10 +259,11 @@ function drawTemporaryPoints() {
 
         ctx.fillStyle = tempColor;
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / zoomFactor; // Spessore fisso
 
         ctx.beginPath();
-        ctx.arc(x, y, CONTROL_POINT_TEMP_RADIUS, 0, 2 * Math.PI);
+        const radius = CONTROL_POINT_TEMP_RADIUS / zoomFactor; // Raggio fisso
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
     });
@@ -275,10 +288,10 @@ function drawSegmentPreview() {
         y2 = previewPoint.y + imgY;
     }
 
-    // Disegna segmento semi-trasparente con linea tratteggiata
+    // Disegna segmento semi-trasparente con linea tratteggiata - DIMENSIONE FISSA
     ctx.strokeStyle = previewColor;
-    ctx.lineWidth = PREVIEW_LINE_WIDTH;
-    ctx.setLineDash([8, 4]);
+    ctx.lineWidth = PREVIEW_LINE_WIDTH / zoomFactor; // Spessore fisso
+    ctx.setLineDash([8 / zoomFactor, 4 / zoomFactor]); // Pattern tratteggio fisso
 
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -314,11 +327,11 @@ function drawRectanglePreview() {
         y2 = maxY + imgY;
     }
 
-    // Disegna rettangolo semi-trasparente
+    // Disegna rettangolo semi-trasparente - DIMENSIONE FISSA
     ctx.strokeStyle = previewStroke;
     ctx.fillStyle = previewFill;
-    ctx.lineWidth = PREVIEW_LINE_WIDTH;
-    ctx.setLineDash([8, 4]);
+    ctx.lineWidth = PREVIEW_LINE_WIDTH / zoomFactor; // Spessore fisso
+    ctx.setLineDash([8 / zoomFactor, 4 / zoomFactor]); // Pattern tratteggio fisso
 
     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
     ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
@@ -337,23 +350,23 @@ function drawSnapIndicator(point) {
         y = point.y + imgY;
     }
 
-    // Disegna un cerchio pulsante per indicare lo snap
+    // Disegna un cerchio pulsante per indicare lo snap - DIMENSIONE FISSA
     const snapColor = getComputedStyle(document.documentElement).getPropertyValue('--segment-selected-alpha').trim();
 
     ctx.strokeStyle = snapColor;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 / zoomFactor; // Spessore fisso
 
-    // Cerchio esterno
+    // Cerchio esterno - dimensione fissa
     ctx.beginPath();
-    ctx.arc(x, y, 10, 0, 2 * Math.PI);
+    ctx.arc(x, y, 10 / zoomFactor, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.fill();
 
-    // Cerchio interno
+    // Cerchio interno - dimensione fissa
     ctx.fillStyle = snapColor;
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.arc(x, y, 4 / zoomFactor, 0, 2 * Math.PI);
     ctx.fill();
 }
 
@@ -366,28 +379,34 @@ function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
 
-    // Calcola la posizione dell'etichetta spostata dalla linea
+    // Calcola la posizione dell'etichetta spostata dalla linea - offset fisso
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
-    const offsetX = (-dy / length) * 20;
-    const offsetY = (dx / length) * 20;
+    const fixedOffset = 20 / zoomFactor; // Offset fisso
+    const offsetX = (-dy / length) * fixedOffset;
+    const offsetY = (dx / length) * fixedOffset;
 
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
+    // Font size fisso compensato per zoom
+    const fontSize = LABEL_FONT_SIZE / zoomFactor;
+    ctx.font = `bold ${fontSize}px Arial`;
+
     // Sfondo dell'etichetta
     ctx.fillStyle = labelBg;
     const text = `${realDistance} mm`;
-    ctx.font = 'bold 12px Arial';
     const textWidth = ctx.measureText(text).width;
+    const padding = 6 / zoomFactor;
+    const boxHeight = 20 / zoomFactor;
 
-    ctx.fillRect(labelX - textWidth/2 - 6, labelY - 16, textWidth + 12, 20);
+    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
 
     // Testo
     ctx.fillStyle = labelText;
     ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2);
+    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
 }
 
 // === GESTIONE EVENTI TOUCH E CLICK ===
@@ -420,7 +439,7 @@ let lastTouchEndTime = 0; // Per bloccare eventi mouse dopo touch
 function handlePointCreation(clientX, clientY) {
     const currentTime = Date.now();
 
-    addDebugLog('HANDLE_POINT', `points.length=${points.length}, lastClickTime=${currentTime - lastClickTime}ms ago`);
+    addDebugLog('HANDLE_POINT', `mode=${drawingMode}, points.length=${points.length}, lastClickTime=${currentTime - lastClickTime}ms ago`);
 
     // Prevenire eventi duplicati
     if (currentTime - lastClickTime < clickCooldown) {
@@ -438,7 +457,25 @@ function handlePointCreation(clientX, clientY) {
     const coords = getCanvasCoordinates(clientX, clientY);
     showTouchFeedback(clientX, clientY);
 
-    // SOLUZIONE 4: Logica combinata
+    // MODALITÀ SELECT: solo selezione, nessun disegno
+    if (drawingMode === 'select') {
+        addDebugLog('SELECT_MODE', 'tentativo selezione segmento');
+        if (selectSegment(coords.x, coords.y)) {
+            addDebugLog('SEGMENT_SELECTED', 'segmento selezionato');
+            drawCanvas();
+            updateSegmentsList();
+        } else {
+            // Click su vuoto: deseleziona
+            selectedSegment = null;
+            updateMeasurement();
+            drawCanvas();
+            updateSegmentsList();
+            addDebugLog('DESELECT', 'segmento deselezionato');
+        }
+        return true;
+    }
+
+    // MODALITÀ DISEGNO: logica combinata come prima
 
     // 1. Se c'è un disegno in corso (primo punto già piazzato), PRIORITÀ AL DISEGNO
     if (points.length > 0) {
@@ -477,15 +514,7 @@ function handlePointCreation(clientX, clientY) {
         return true;
     }
 
-    // 3. Nessuno snap: prova a selezionare un segmento esistente
-    if (selectSegment(coords.x, coords.y)) {
-        addDebugLog('SEGMENT_SELECTED', 'segmento selezionato');
-        drawCanvas();
-        updateSegmentsList();
-        return true; // Evento gestito
-    }
-
-    // 4. Niente di tutto ciò: crea nuovo punto
+    // 3. Nessuno snap in modalità disegno: crea nuovo punto (NON selezionare)
     addDebugLog('POINT_ADDED', `nuovo (${coords.x.toFixed(1)}, ${coords.y.toFixed(1)})`);
     addPoint(coords.x, coords.y);
     return true; // Evento gestito
@@ -786,6 +815,7 @@ function createSegment() {
 
         updateMeasurement();
         updateSegmentsList();
+        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Nuovo segmento creato', 'success');
     } else if (drawingMode === 'continuous') {
         // Modalità segmento continuativo
@@ -805,6 +835,7 @@ function createSegment() {
 
         updateMeasurement();
         updateSegmentsList();
+        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Segmento aggiunto alla catena', 'success');
     } else if (drawingMode === 'rectangle') {
         // Modalità rettangolo: crea 4 segmenti
@@ -843,6 +874,7 @@ function createSegment() {
 
         updateMeasurement();
         updateSegmentsList();
+        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Nuovo rettangolo creato (4 segmenti)', 'success');
     }
 }
@@ -1145,12 +1177,32 @@ function deleteSegment(segment) {
     );
 }
 
+function undoLastSegment() {
+    if (segments.length === 0) {
+        showToast('Nessun segmento da annullare', 'info');
+        return;
+    }
+
+    // Rimuovi l'ultimo segmento inserito
+    const removedSegment = segments.pop();
+
+    // Se il segmento rimosso era selezionato, deseleziona
+    if (selectedSegment === removedSegment) {
+        selectedSegment = null;
+        updateMeasurement();
+    }
+
+    updateSegmentsList();
+    drawCanvas();
+    showToast(`Annullato: ${removedSegment.name}`, 'info');
+}
+
 function deleteAllSegments() {
     if (segments.length === 0) {
         showToast('Nessun segmento da eliminare', 'info');
         return;
     }
-    
+
     showConfirmModal(
         'Vuoi eliminare tutti i segmenti?',
         () => {
@@ -1344,6 +1396,56 @@ function loadThemeFromStorage() {
     }
 }
 
+// === FUNZIONI FEEDBACK ===
+function checkAndShowFeedbackModal() {
+    // Controlla se il modal non è mai stato mostrato
+    const feedbackStatus = localStorage.getItem('imgmeasure-feedback-status');
+
+    // Se l'utente ha già risposto (yes, later, never), non mostrare più
+    if (feedbackStatus) {
+        return;
+    }
+
+    // Se è già stato mostrato in questa sessione, non mostrare di nuovo
+    if (feedbackShown) {
+        return;
+    }
+
+    // Controlla se abbiamo raggiunto il numero di segmenti richiesto
+    if (segments.length === FEEDBACK_TRIGGER_COUNT) {
+        feedbackShown = true; // Segna come mostrato in questa sessione
+
+        // Mostra il modal dopo un piccolo delay per non essere troppo invasivo
+        setTimeout(() => {
+            const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+            feedbackModal.show();
+        }, 1000);
+    }
+}
+
+function handleFeedbackResponse(response) {
+    // Salva la risposta in localStorage per non mostrare più il modal
+    localStorage.setItem('imgmeasure-feedback-status', response);
+
+    // Chiudi il modal
+    const feedbackModal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
+    if (feedbackModal) {
+        feedbackModal.hide();
+    }
+
+    if (response === 'yes') {
+        showToast('Grazie per il tuo feedback!', 'success');
+    } else if (response === 'never') {
+        showToast('Ok, non ti disturberemo più', 'info');
+    }
+}
+
+function openFeedbackManually() {
+    // Funzione chiamata quando si clicca il pulsante feedback nella navbar
+    const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    feedbackModal.show();
+}
+
 // Funzione rimossa - ora usiamo Bootstrap Offcanvas
 
 // === EVENT LISTENERS ===
@@ -1394,6 +1496,23 @@ document.addEventListener("DOMContentLoaded", function() {
     else if (currentTheme === 'dark') themeDarkBtn?.classList.add('active');
     else if (currentTheme === 'contrast') themeContrastBtn?.classList.add('active');
 
+    // Toggle segments visibility button
+    const toggleSegmentsBtn = document.getElementById('toggle-segments');
+
+    if (toggleSegmentsBtn) {
+        toggleSegmentsBtn.addEventListener('click', () => {
+            showSegments = !showSegments;
+            if (showSegments) {
+                toggleSegmentsBtn.classList.add('active');
+                showToast('Segmenti visibili', 'info');
+            } else {
+                toggleSegmentsBtn.classList.remove('active');
+                showToast('Segmenti nascosti - immagine pulita', 'info');
+            }
+            drawCanvas();
+        });
+    }
+
     // Toggle preview button
     const togglePreviewBtn = document.getElementById('toggle-preview');
 
@@ -1412,14 +1531,30 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Drawing mode buttons
+    // Mode buttons
+    const modeSelectBtn = document.getElementById('mode-select');
     const modeSegmentBtn = document.getElementById('mode-segment');
     const modeContinuousBtn = document.getElementById('mode-continuous');
     const modeRectangleBtn = document.getElementById('mode-rectangle');
 
+    if (modeSelectBtn) {
+        modeSelectBtn.addEventListener('click', () => {
+            drawingMode = 'select';
+            modeSelectBtn.classList.add('active');
+            modeSegmentBtn?.classList.remove('active');
+            modeContinuousBtn?.classList.remove('active');
+            modeRectangleBtn?.classList.remove('active');
+            points = []; // Reset punti temporanei
+            previewPoint = null;
+            drawCanvas();
+            showToast('Modalità Selezione attivata - clicca sui segmenti per selezionarli', 'info');
+        });
+    }
+
     if (modeSegmentBtn) {
         modeSegmentBtn.addEventListener('click', () => {
             drawingMode = 'segment';
+            modeSelectBtn?.classList.remove('active');
             modeSegmentBtn.classList.add('active');
             modeContinuousBtn?.classList.remove('active');
             modeRectangleBtn?.classList.remove('active');
@@ -1433,8 +1568,9 @@ document.addEventListener("DOMContentLoaded", function() {
     if (modeContinuousBtn) {
         modeContinuousBtn.addEventListener('click', () => {
             drawingMode = 'continuous';
-            modeContinuousBtn.classList.add('active');
+            modeSelectBtn?.classList.remove('active');
             modeSegmentBtn?.classList.remove('active');
+            modeContinuousBtn.classList.add('active');
             modeRectangleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
@@ -1446,9 +1582,10 @@ document.addEventListener("DOMContentLoaded", function() {
     if (modeRectangleBtn) {
         modeRectangleBtn.addEventListener('click', () => {
             drawingMode = 'rectangle';
-            modeRectangleBtn.classList.add('active');
+            modeSelectBtn?.classList.remove('active');
             modeSegmentBtn?.classList.remove('active');
             modeContinuousBtn?.classList.remove('active');
+            modeRectangleBtn.classList.add('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
@@ -1490,12 +1627,14 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Controls
+    const undoBtn = document.getElementById('undo-btn');
     const deleteAllElement = document.getElementById('deleteall');
     const zoomInElement = document.getElementById('zoom-in');
     const zoomOutElement = document.getElementById('zoom-out');
     const resetElement = document.getElementById('reset');
     const centerElement = document.getElementById('center');
 
+    if (undoBtn) undoBtn.addEventListener('click', undoLastSegment);
     if (deleteAllElement) deleteAllElement.addEventListener('click', deleteAllSegments);
     if (zoomInElement) zoomInElement.addEventListener('click', zoomIn);
     if (zoomOutElement) zoomOutElement.addEventListener('click', zoomOut);
@@ -1518,9 +1657,13 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Listener per tasto ESC - annulla disegno corrente
+    // Listener per Ctrl+Z / Cmd+Z - undo ultimo segmento
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' || event.key === 'Esc') {
             cancelCurrentDrawing();
+        } else if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+            event.preventDefault(); // Previeni il comportamento predefinito del browser
+            undoLastSegment();
         }
     });
 
@@ -1534,6 +1677,34 @@ document.addEventListener("DOMContentLoaded", function() {
     const debugButton = document.querySelector('[data-bs-target="#debugModal"]');
     if (debugButton) {
         debugButton.style.display = DEBUG_MODE ? '' : 'none';
+    }
+
+    // Feedback system event listeners
+    const feedbackBtn = document.getElementById('feedback-btn');
+    const feedbackYesBtn = document.getElementById('feedback-yes-btn');
+    const feedbackLaterBtn = document.getElementById('feedback-later-btn');
+    const feedbackNeverBtn = document.getElementById('feedback-never-btn');
+
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', openFeedbackManually);
+    }
+
+    if (feedbackYesBtn) {
+        feedbackYesBtn.addEventListener('click', () => {
+            handleFeedbackResponse('yes');
+        });
+    }
+
+    if (feedbackLaterBtn) {
+        feedbackLaterBtn.addEventListener('click', () => {
+            handleFeedbackResponse('later');
+        });
+    }
+
+    if (feedbackNeverBtn) {
+        feedbackNeverBtn.addEventListener('click', () => {
+            handleFeedbackResponse('never');
+        });
     }
 
     // Initialize
