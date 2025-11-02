@@ -1359,12 +1359,50 @@ function resetView() {
 
 
 function zoomIn() {
-    zoomFactor = Math.min(5, zoomFactor + 0.2);
+    const oldZoom = zoomFactor;
+    const newZoom = Math.min(7, oldZoom + 0.2);
+
+    if (oldZoom === newZoom) return;
+
+    const canvasCenterX = canvas.width / 2;
+    const canvasCenterY = canvas.height / 2;
+
+    // Adjust pan to keep the center of the screen stationary
+    const panXAdjust = (canvasCenterX / newZoom) - (canvasCenterX / oldZoom);
+    const panYAdjust = (canvasCenterY / newZoom) - (canvasCenterY / oldZoom);
+    
+    panX += panXAdjust;
+    panY += panYAdjust;
+
+    // Update image position based on new pan
+    imgX = centerX + panX;
+    imgY = centerY + panY;
+    
+    zoomFactor = newZoom;
     drawCanvas();
 }
 
 function zoomOut() {
-    zoomFactor = Math.max(0.5, zoomFactor - 0.2);
+    const oldZoom = zoomFactor;
+    const newZoom = Math.max(0.5, oldZoom - 0.2);
+
+    if (oldZoom === newZoom) return;
+
+    const canvasCenterX = canvas.width / 2;
+    const canvasCenterY = canvas.height / 2;
+
+    // Adjust pan to keep the center of the screen stationary
+    const panXAdjust = (canvasCenterX / newZoom) - (canvasCenterX / oldZoom);
+    const panYAdjust = (canvasCenterY / newZoom) - (canvasCenterY / oldZoom);
+    
+    panX += panXAdjust;
+    panY += panYAdjust;
+
+    // Update image position based on new pan
+    imgX = centerX + panX;
+    imgY = centerY + panY;
+    
+    zoomFactor = newZoom;
     drawCanvas();
 }
 

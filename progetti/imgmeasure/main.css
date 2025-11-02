@@ -371,10 +371,9 @@ body {
     transform: scale(1.1);
 }
 
-#feedback-btn i {
-    color: #ff69b4;
-}
-
+    #feedback-btn i {
+        /* color: #ff69b4; */ /* Removed explicit color to make it inherit */
+    }
 @keyframes heartbeat {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
@@ -406,12 +405,12 @@ body {
 }
 
 #toggle-preview.active i {
-    color: #28a745;
+    /* color: #28a745; */ /* Removed explicit color to make it inherit */
 }
 
 #toggle-preview:not(.active) i {
-    color: #dc3545;
-    opacity: 0.6;
+    /* color: #dc3545; */ /* Removed explicit color to make it inherit */
+    /* opacity: 0.6; */ /* Removed opacity to make it fully white */
 }
 
 /* Animazioni smooth */
