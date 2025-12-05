@@ -43,8 +43,8 @@ let panelOpen = false;
 let segmentCounter = 1;
 
 // Drawing mode
-let drawingMode = 'segment'; // 'select', 'segment', 'rectangle', or 'continuous'
-let previewPoint = null; // Per l'anteprima del rettangolo/segmento
+let drawingMode = 'segment'; // 'select', 'segment', 'rectangle', 'continuous', or 'circle'
+let previewPoint = null; // Per l'anteprima del rettangolo/segmento/cerchio
 let showPreview = true; // Flag per attivare/disattivare l'anteprima
 let snapPreviewPoint = null; // Punto di snap visualizzato in anteprima
 let showSegments = true; // Flag per mostrare/nascondere i segmenti
@@ -156,7 +156,13 @@ function drawCanvas() {
 
     // Disegna tutti i segmenti solo se showSegments è true
     if (showSegments) {
-        segments.forEach(segment => drawSegment(segment));
+        segments.forEach(segment => {
+            if (segment.type === 'circle') {
+                drawCircle(segment);
+            } else {
+                drawSegment(segment);
+            }
+        });
 
         // Disegna i punti temporanei se ci sono
         if (points.length > 0) {
@@ -169,6 +175,8 @@ function drawCanvas() {
                 drawSegmentPreview();
             } else if (drawingMode === 'rectangle') {
                 drawRectanglePreview();
+            } else if (drawingMode === 'circle') {
+                drawCirclePreview();
             }
         }
 
@@ -299,6 +307,9 @@ function drawSegmentPreview() {
     ctx.stroke();
 
     ctx.setLineDash([]);
+
+    // Disegna la label con la misura dell'anteprima
+    drawPreviewMeasurementLabel(points[0], previewPoint, x1, y1, x2, y2);
 }
 
 function drawRectanglePreview() {
@@ -312,6 +323,12 @@ function drawRectanglePreview() {
     const maxX = Math.max(points[0].x, previewPoint.x);
     const minY = Math.min(points[0].y, previewPoint.y);
     const maxY = Math.max(points[0].y, previewPoint.y);
+
+    // I 4 vertici del rettangolo in coordinate immagine
+    const topLeft = { x: minX, y: minY };
+    const topRight = { x: maxX, y: minY };
+    const bottomRight = { x: maxX, y: maxY };
+    const bottomLeft = { x: minX, y: maxY };
 
     // Converti in coordinate canvas
     let x1, y1, x2, y2;
@@ -337,6 +354,126 @@ function drawRectanglePreview() {
     ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
 
     ctx.setLineDash([]);
+
+    // Disegna le label con le misure dei 4 lati
+    // Calcola coordinate canvas per tutti i vertici
+    let canvasTopLeft, canvasTopRight, canvasBottomRight, canvasBottomLeft;
+    if (img.width && img.height && scaleFactor !== 1) {
+        canvasTopLeft = { x: (topLeft.x * scaleFactor) + imgX, y: (topLeft.y * scaleFactor) + imgY };
+        canvasTopRight = { x: (topRight.x * scaleFactor) + imgX, y: (topRight.y * scaleFactor) + imgY };
+        canvasBottomRight = { x: (bottomRight.x * scaleFactor) + imgX, y: (bottomRight.y * scaleFactor) + imgY };
+        canvasBottomLeft = { x: (bottomLeft.x * scaleFactor) + imgX, y: (bottomLeft.y * scaleFactor) + imgY };
+    } else {
+        canvasTopLeft = { x: topLeft.x + imgX, y: topLeft.y + imgY };
+        canvasTopRight = { x: topRight.x + imgX, y: topRight.y + imgY };
+        canvasBottomRight = { x: bottomRight.x + imgX, y: bottomRight.y + imgY };
+        canvasBottomLeft = { x: bottomLeft.x + imgX, y: bottomLeft.y + imgY };
+    }
+
+    // Lato superiore
+    drawPreviewMeasurementLabel(topLeft, topRight, canvasTopLeft.x, canvasTopLeft.y, canvasTopRight.x, canvasTopRight.y);
+    // Lato destro
+    drawPreviewMeasurementLabel(topRight, bottomRight, canvasTopRight.x, canvasTopRight.y, canvasBottomRight.x, canvasBottomRight.y);
+    // Lato inferiore
+    drawPreviewMeasurementLabel(bottomRight, bottomLeft, canvasBottomRight.x, canvasBottomRight.y, canvasBottomLeft.x, canvasBottomLeft.y);
+    // Lato sinistro
+    drawPreviewMeasurementLabel(bottomLeft, topLeft, canvasBottomLeft.x, canvasBottomLeft.y, canvasTopLeft.x, canvasTopLeft.y);
+}
+
+function drawCircle(circle) {
+    const radius = getPixelDistance(circle.center, circle.radiusPoint);
+
+    // Converti coordinate del centro
+    let centerX, centerY, radiusPointX, radiusPointY;
+    if (img.width && img.height && scaleFactor !== 1) {
+        centerX = (circle.center.x * scaleFactor) + imgX;
+        centerY = (circle.center.y * scaleFactor) + imgY;
+        radiusPointX = (circle.radiusPoint.x * scaleFactor) + imgX;
+        radiusPointY = (circle.radiusPoint.y * scaleFactor) + imgY;
+    } else {
+        centerX = circle.center.x + imgX;
+        centerY = circle.center.y + imgY;
+        radiusPointX = circle.radiusPoint.x + imgX;
+        radiusPointY = circle.radiusPoint.y + imgY;
+    }
+
+    const scaledRadius = radius * scaleFactor;
+
+    // Usa colori CSS variabili dal tema
+    const segmentColor = getComputedStyle(document.documentElement).getPropertyValue(
+        circle === selectedSegment ? '--segment-selected-alpha' : '--segment-color-alpha'
+    ).trim();
+
+    // Disegna il cerchio - DIMENSIONE FISSA compensata per zoom
+    ctx.strokeStyle = segmentColor;
+    ctx.lineWidth = (circle === selectedSegment ? SEGMENT_SELECTED_LINE_WIDTH : SEGMENT_LINE_WIDTH) / zoomFactor;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, scaledRadius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Disegna linea del raggio (dal centro al punto sul bordo)
+    if (circle === selectedSegment) {
+        ctx.strokeStyle = segmentColor;
+        ctx.lineWidth = SEGMENT_LINE_WIDTH / zoomFactor;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(radiusPointX, radiusPointY);
+        ctx.stroke();
+    }
+
+    // Punti di controllo
+    drawControlPoint(centerX, centerY, circle === selectedSegment);
+    drawControlPoint(radiusPointX, radiusPointY, circle === selectedSegment);
+
+    // Etichetta con le misure
+    if (circle === selectedSegment) {
+        drawCircleMeasurementLabel(circle, centerX, centerY, radiusPointX, radiusPointY);
+    }
+}
+
+function drawCirclePreview() {
+    if (!points[0] || !previewPoint) return;
+
+    const radius = getPixelDistance(points[0], previewPoint);
+    const previewColor = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
+
+    // Converti coordinate del centro
+    let centerX, centerY, radiusPointX, radiusPointY;
+    if (img.width && img.height && scaleFactor !== 1) {
+        centerX = (points[0].x * scaleFactor) + imgX;
+        centerY = (points[0].y * scaleFactor) + imgY;
+        radiusPointX = (previewPoint.x * scaleFactor) + imgX;
+        radiusPointY = (previewPoint.y * scaleFactor) + imgY;
+    } else {
+        centerX = points[0].x + imgX;
+        centerY = points[0].y + imgY;
+        radiusPointX = previewPoint.x + imgX;
+        radiusPointY = previewPoint.y + imgY;
+    }
+
+    const scaledRadius = radius * scaleFactor;
+
+    // Disegna cerchio semi-trasparente con linea tratteggiata - DIMENSIONE FISSA
+    ctx.strokeStyle = previewColor;
+    ctx.lineWidth = PREVIEW_LINE_WIDTH / zoomFactor;
+    ctx.setLineDash([8 / zoomFactor, 4 / zoomFactor]);
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, scaledRadius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Disegna linea del raggio (dal centro al punto sul bordo)
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(radiusPointX, radiusPointY);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    // Disegna la label con le misure (raggio e diametro)
+    drawCirclePreviewMeasurementLabel(points[0], previewPoint, centerX, centerY, radiusPointX, radiusPointY);
 }
 
 function drawSnapIndicator(point) {
@@ -409,6 +546,142 @@ function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
 }
 
+function drawPreviewMeasurementLabel(point1, point2, startX, startY, endX, endY) {
+    const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
+    const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
+
+    // Calcola la distanza in tempo reale
+    const realDistance = calculateDistance(point1, point2);
+
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+
+    // Calcola la posizione dell'etichetta spostata dalla linea - offset fisso
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    // Evita divisione per zero se i punti sono troppo vicini
+    if (length < 1) return;
+
+    const fixedOffset = 20 / zoomFactor; // Offset fisso
+    const offsetX = (-dy / length) * fixedOffset;
+    const offsetY = (dx / length) * fixedOffset;
+
+    const labelX = midX + offsetX;
+    const labelY = midY + offsetY;
+
+    // Font size fisso compensato per zoom
+    const fontSize = LABEL_FONT_SIZE / zoomFactor;
+    ctx.font = `bold ${fontSize}px Arial`;
+
+    // Sfondo dell'etichetta con opacità maggiore per l'anteprima
+    ctx.fillStyle = labelBg;
+    const text = `${realDistance} mm`;
+    const textWidth = ctx.measureText(text).width;
+    const padding = 6 / zoomFactor;
+    const boxHeight = 20 / zoomFactor;
+
+    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
+
+    // Testo
+    ctx.fillStyle = labelText;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+}
+
+function drawCircleMeasurementLabel(circle, centerX, centerY, radiusPointX, radiusPointY) {
+    const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--label-bg').trim();
+    const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
+
+    // Calcola raggio e diametro
+    const radiusReal = calculateDistance(circle.center, circle.radiusPoint);
+    const diameterReal = (parseFloat(radiusReal) * 2).toFixed(2);
+
+    // Posiziona la label lungo la linea del raggio, a metà strada
+    const midX = (centerX + radiusPointX) / 2;
+    const midY = (centerY + radiusPointY) / 2;
+
+    // Calcola offset perpendicolare per non sovrapporre la linea
+    const dx = radiusPointX - centerX;
+    const dy = radiusPointY - centerY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    if (length < 1) return;
+
+    const fixedOffset = 15 / zoomFactor;
+    const offsetX = (-dy / length) * fixedOffset;
+    const offsetY = (dx / length) * fixedOffset;
+
+    const labelX = midX + offsetX;
+    const labelY = midY + offsetY;
+
+    // Font size fisso compensato per zoom
+    const fontSize = LABEL_FONT_SIZE / zoomFactor;
+    ctx.font = `bold ${fontSize}px Arial`;
+
+    // Testo con raggio e diametro
+    const text = `r: ${radiusReal}mm | ø: ${diameterReal}mm`;
+    const textWidth = ctx.measureText(text).width;
+    const padding = 6 / zoomFactor;
+    const boxHeight = 20 / zoomFactor;
+
+    // Sfondo dell'etichetta
+    ctx.fillStyle = labelBg;
+    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
+
+    // Testo
+    ctx.fillStyle = labelText;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+}
+
+function drawCirclePreviewMeasurementLabel(center, radiusPoint, centerX, centerY, radiusPointX, radiusPointY) {
+    const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
+    const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
+
+    // Calcola raggio e diametro in tempo reale
+    const radiusReal = calculateDistance(center, radiusPoint);
+    const diameterReal = (parseFloat(radiusReal) * 2).toFixed(2);
+
+    // Posiziona la label lungo la linea del raggio, a metà strada
+    const midX = (centerX + radiusPointX) / 2;
+    const midY = (centerY + radiusPointY) / 2;
+
+    // Calcola offset perpendicolare per non sovrapporre la linea
+    const dx = radiusPointX - centerX;
+    const dy = radiusPointY - centerY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    if (length < 1) return;
+
+    const fixedOffset = 15 / zoomFactor;
+    const offsetX = (-dy / length) * fixedOffset;
+    const offsetY = (dx / length) * fixedOffset;
+
+    const labelX = midX + offsetX;
+    const labelY = midY + offsetY;
+
+    // Font size fisso compensato per zoom
+    const fontSize = LABEL_FONT_SIZE / zoomFactor;
+    ctx.font = `bold ${fontSize}px Arial`;
+
+    // Testo con raggio e diametro
+    const text = `r: ${radiusReal}mm | ø: ${diameterReal}mm`;
+    const textWidth = ctx.measureText(text).width;
+    const padding = 6 / zoomFactor;
+    const boxHeight = 20 / zoomFactor;
+
+    // Sfondo dell'etichetta
+    ctx.fillStyle = labelBg;
+    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
+
+    // Testo
+    ctx.fillStyle = labelText;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+}
+
 // === GESTIONE EVENTI TOUCH E CLICK ===
 canvas.addEventListener('click', handleCanvasClick);
 canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -429,6 +702,11 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 let isMousePanning = false;
 let mouseStartX = 0;
 let mouseStartY = 0;
+
+// Variabili per drag & drop punti
+let isDraggingPoint = false;
+let draggedSegment = null;
+let draggedPointType = null; // 'start' o 'end'
 
 // Variabile per prevenire eventi duplicati
 let lastClickTime = 0;
@@ -527,6 +805,21 @@ function handleMouseDown(event) {
         mouseStartX = event.clientX;
         mouseStartY = event.clientY;
         canvas.style.cursor = 'move';
+    } else if (event.button === 0 && drawingMode === 'select') { // Left click in select mode
+        event.preventDefault();
+        const coords = getCanvasCoordinates(event.clientX, event.clientY);
+        const nearestPoint = findNearestPoint(coords.x, coords.y);
+
+        if (nearestPoint) {
+            isDraggingPoint = true;
+            draggedSegment = nearestPoint.segment;
+            draggedPointType = nearestPoint.pointType;
+            selectedSegment = draggedSegment;
+            canvas.style.cursor = 'grabbing';
+            updateMeasurement();
+            updateSegmentsList();
+            drawCanvas();
+        }
     }
 }
 
@@ -548,7 +841,45 @@ function handlePointerMove(event) {
 }
 
 function handleMouseMove(event) {
-    if (isMousePanning) {
+    if (isDraggingPoint) {
+        // Drag del punto in modalità selezione
+        event.preventDefault();
+        const coords = getCanvasCoordinates(event.clientX, event.clientY);
+
+        if (draggedSegment && draggedPointType) {
+            // Aggiorna la posizione del punto trascinato
+            if (draggedSegment.type === 'circle') {
+                // Per i cerchi
+                if (draggedPointType === 'center') {
+                    // Sposta l'intero cerchio mantenendo il raggio costante
+                    const deltaX = coords.x - draggedSegment.center.x;
+                    const deltaY = coords.y - draggedSegment.center.y;
+
+                    draggedSegment.center.x = coords.x;
+                    draggedSegment.center.y = coords.y;
+                    draggedSegment.radiusPoint.x += deltaX;
+                    draggedSegment.radiusPoint.y += deltaY;
+                } else if (draggedPointType === 'radiusPoint') {
+                    // Modifica solo il raggio
+                    draggedSegment.radiusPoint.x = coords.x;
+                    draggedSegment.radiusPoint.y = coords.y;
+                }
+            } else {
+                // Per i segmenti
+                if (draggedPointType === 'start') {
+                    draggedSegment.start.x = coords.x;
+                    draggedSegment.start.y = coords.y;
+                } else {
+                    draggedSegment.end.x = coords.x;
+                    draggedSegment.end.y = coords.y;
+                }
+            }
+
+            updateMeasurement();
+            updateSegmentsList();
+            drawCanvas();
+        }
+    } else if (isMousePanning) {
         event.preventDefault();
         const deltaX = event.clientX - mouseStartX;
         const deltaY = event.clientY - mouseStartY;
@@ -572,6 +903,16 @@ function handleMouseMove(event) {
         snapPreviewPoint = snapPoint;
 
         drawCanvas();
+    } else if (drawingMode === 'select') {
+        // In modalità selezione, mostra cursore appropriato quando si passa su un punto
+        const coords = getCanvasCoordinates(event.clientX, event.clientY);
+        const nearestPoint = findNearestPoint(coords.x, coords.y);
+
+        if (nearestPoint) {
+            canvas.style.cursor = 'grab';
+        } else {
+            canvas.style.cursor = 'crosshair';
+        }
     } else {
         // Anche senza disegno in corso, mostra snap indicator
         const coords = getCanvasCoordinates(event.clientX, event.clientY);
@@ -585,6 +926,13 @@ function handleMouseMove(event) {
 }
 
 function handleMouseUp() {
+    if (isDraggingPoint) {
+        isDraggingPoint = false;
+        draggedSegment = null;
+        draggedPointType = null;
+        canvas.style.cursor = 'crosshair';
+        showToast('Punto spostato', 'success');
+    }
     if (isMousePanning) {
         isMousePanning = false;
         canvas.style.cursor = 'crosshair';
@@ -593,6 +941,11 @@ function handleMouseUp() {
 
 function handleCanvasClick(event) {
     event.preventDefault();
+
+    // Non gestire il click se abbiamo appena finito un drag
+    if (isDraggingPoint) {
+        return;
+    }
 
     const currentTime = Date.now();
     const timeSinceTouchEnd = currentTime - lastTouchEndTime;
@@ -613,34 +966,50 @@ function handleTouchStart(event) {
     event.preventDefault();
     const currentTime = Date.now();
     touches = Array.from(event.touches);
-    
+
     if (touches.length === 1) {
         // Single touch
         const touch = touches[0];
         const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
-        
+
         // Check for double tap
         if (currentTime - lastClickTime < 300) {
             handleDoubleTap();
             return;
         }
-        
+
         panStartX = touch.clientX;
         panStartY = touch.clientY;
-        
-        // Check if touching a segment
-        if (selectSegment(coords.x, coords.y)) {
-            drawCanvas();
-            updateSegmentsList();
+
+        // In modalità selezione, controlla se si sta toccando un punto per il drag
+        if (drawingMode === 'select') {
+            const nearestPoint = findNearestPoint(coords.x, coords.y);
+
+            if (nearestPoint) {
+                isDraggingPoint = true;
+                draggedSegment = nearestPoint.segment;
+                draggedPointType = nearestPoint.pointType;
+                selectedSegment = draggedSegment;
+                updateMeasurement();
+                updateSegmentsList();
+                drawCanvas();
+                return; // Non iniziare il pan
+            }
+
+            // Check if touching a segment (solo in modalità select)
+            if (selectSegment(coords.x, coords.y)) {
+                drawCanvas();
+                updateSegmentsList();
+            }
         }
-        
+
     } else if (touches.length === 2) {
         // Multi-touch for zoom
         isMultiTouch = true;
         initialDistance = getDistance(touches[0], touches[1]);
         initialZoom = zoomFactor;
     }
-    
+
     // lastTouchTime = currentTime; // Non necessario, gestito da handlePointCreation
 }
 
@@ -653,6 +1022,44 @@ function handleTouchMove(event) {
 
     if (event.touches.length === 1 && !isMultiTouch) {
         const touch = event.touches[0];
+
+        // Se stiamo trascinando un punto, aggiorna la sua posizione
+        if (isDraggingPoint && draggedSegment && draggedPointType) {
+            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
+
+            if (draggedSegment.type === 'circle') {
+                // Per i cerchi
+                if (draggedPointType === 'center') {
+                    // Sposta l'intero cerchio mantenendo il raggio costante
+                    const deltaX = coords.x - draggedSegment.center.x;
+                    const deltaY = coords.y - draggedSegment.center.y;
+
+                    draggedSegment.center.x = coords.x;
+                    draggedSegment.center.y = coords.y;
+                    draggedSegment.radiusPoint.x += deltaX;
+                    draggedSegment.radiusPoint.y += deltaY;
+                } else if (draggedPointType === 'radiusPoint') {
+                    // Modifica solo il raggio
+                    draggedSegment.radiusPoint.x = coords.x;
+                    draggedSegment.radiusPoint.y = coords.y;
+                }
+            } else {
+                // Per i segmenti
+                if (draggedPointType === 'start') {
+                    draggedSegment.start.x = coords.x;
+                    draggedSegment.start.y = coords.y;
+                } else {
+                    draggedSegment.end.x = coords.x;
+                    draggedSegment.end.y = coords.y;
+                }
+            }
+
+            updateMeasurement();
+            updateSegmentsList();
+            drawCanvas();
+            return; // Non fare pan durante il drag
+        }
+
         const deltaX = touch.clientX - panStartX;
         const deltaY = touch.clientY - panStartY;
 
@@ -694,11 +1101,18 @@ function handleTouchMove(event) {
 function handleTouchEnd(event) {
     event.preventDefault();
 
-    addDebugLog('TOUCH_END', `touches.length=${event.touches.length}, isPanning=${isPanning}, isMultiTouch=${isMultiTouch}`);
+    addDebugLog('TOUCH_END', `touches.length=${event.touches.length}, isPanning=${isPanning}, isMultiTouch=${isMultiTouch}, isDragging=${isDraggingPoint}`);
 
     if (event.touches.length === 0) {
         // All fingers lifted
-        if (!isPanning && !isMultiTouch && touches.length === 1) {
+
+        // Se stavamo trascinando un punto, termina il drag
+        if (isDraggingPoint) {
+            isDraggingPoint = false;
+            draggedSegment = null;
+            draggedPointType = null;
+            showToast('Punto spostato', 'success');
+        } else if (!isPanning && !isMultiTouch && touches.length === 1) {
             // Single tap without pan
             const touch = touches[0];
             addDebugLog('TOUCH_TAP', `calling handlePointCreation, points.length=${points.length}`);
@@ -876,6 +1290,25 @@ function createSegment() {
         updateSegmentsList();
         checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Nuovo rettangolo creato (4 segmenti)', 'success');
+    } else if (drawingMode === 'circle') {
+        // Modalità cerchio: crea un cerchio con centro e punto sul raggio
+        const circle = {
+            id: segmentCounter++,
+            type: 'circle',
+            name: `Cerchio ${segmentCounter - 1}`,
+            center: points[0],
+            radiusPoint: points[1]
+        };
+
+        segments.push(circle);
+        selectedSegment = circle;
+        points = [];
+        previewPoint = null; // Resetta l'anteprima
+
+        updateMeasurement();
+        updateSegmentsList();
+        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        showToast('Nuovo cerchio creato', 'success');
     }
 }
 
@@ -897,6 +1330,11 @@ function findNearestEndpoint(x, y) {
 
     // Cerca tra tutti gli endpoint dei segmenti esistenti
     segments.forEach((segment, idx) => {
+        // I cerchi non hanno endpoint per lo snap, salta
+        if (segment.type === 'circle') {
+            return;
+        }
+
         // Controlla punto iniziale
         const distToStart = getPixelDistance({ x, y }, segment.start);
 
@@ -966,13 +1404,22 @@ function selectSegment(x, y) {
 
     // Trova il segmento più vicino
     segments.forEach(segment => {
-        const distance = distanceToSegment(x, y, segment);
+        let distance;
+
+        if (segment.type === 'circle') {
+            // Per i cerchi: calcola distanza dal bordo del cerchio
+            distance = distanceToCircle(x, y, segment);
+        } else {
+            // Per i segmenti: calcola distanza dalla linea
+            distance = distanceToSegment(x, y, segment);
+        }
+
         if (distance < SEGMENT_SELECT_DISTANCE && distance < minDistance) {
             minDistance = distance;
             newSelectedSegment = segment;
         }
     });
-    
+
     // Se è stato trovato un segmento e non è quello già selezionato
     if (newSelectedSegment && newSelectedSegment !== selectedSegment) {
         selectedSegment = newSelectedSegment;
@@ -993,7 +1440,7 @@ function selectSegment(x, y) {
 
         return true; // Evento gestito: segmento selezionato
     }
-    
+
     // Restituisce true solo se è stato effettivamente selezionato un segmento
     return newSelectedSegment !== null;
 }
@@ -1017,11 +1464,80 @@ function distanceToSegment(x, y, segment) {
     return Math.sqrt(distanceSq);
 }
 
+function distanceToCircle(x, y, circle) {
+    // Calcola la distanza dal centro del cerchio
+    const distanceFromCenter = getPixelDistance({ x, y }, circle.center);
+
+    // Calcola il raggio del cerchio
+    const radius = getPixelDistance(circle.center, circle.radiusPoint);
+
+    // Restituisce la distanza dal bordo del cerchio
+    // Se il punto è dentro il cerchio, la distanza è negativa (ma prendiamo il valore assoluto)
+    return Math.abs(distanceFromCenter - radius);
+}
+
+function findNearestPoint(x, y) {
+    let nearestSegment = null;
+    let nearestPointType = null;
+    let minDistance = CONTROL_POINT_SELECTED_RADIUS * 2; // Soglia di selezione
+
+    segments.forEach(segment => {
+        if (segment.type === 'circle') {
+            // Per i cerchi: controlla centro e radiusPoint
+            const distToCenter = getPixelDistance({ x, y }, segment.center);
+            if (distToCenter < minDistance) {
+                minDistance = distToCenter;
+                nearestSegment = segment;
+                nearestPointType = 'center';
+            }
+
+            const distToRadiusPoint = getPixelDistance({ x, y }, segment.radiusPoint);
+            if (distToRadiusPoint < minDistance) {
+                minDistance = distToRadiusPoint;
+                nearestSegment = segment;
+                nearestPointType = 'radiusPoint';
+            }
+        } else {
+            // Per i segmenti: controlla start e end
+            const distToStart = getPixelDistance({ x, y }, segment.start);
+            if (distToStart < minDistance) {
+                minDistance = distToStart;
+                nearestSegment = segment;
+                nearestPointType = 'start';
+            }
+
+            const distToEnd = getPixelDistance({ x, y }, segment.end);
+            if (distToEnd < minDistance) {
+                minDistance = distToEnd;
+                nearestSegment = segment;
+                nearestPointType = 'end';
+            }
+        }
+    });
+
+    return nearestSegment ? { segment: nearestSegment, pointType: nearestPointType } : null;
+}
+
 // === FUNZIONI UI E UTILITA' ===
 function updateMeasurement() {
     if (selectedSegment) {
-        const pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
-        const realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
+        let pixelDistance, realDistance, statusText;
+
+        if (selectedSegment.type === 'circle') {
+            // Per i cerchi: mostra raggio e diametro
+            const radiusPixels = getPixelDistance(selectedSegment.center, selectedSegment.radiusPoint);
+            const radiusReal = calculateDistance(selectedSegment.center, selectedSegment.radiusPoint);
+            const diameterReal = (parseFloat(radiusReal) * 2).toFixed(2);
+
+            pixelDistance = radiusPixels;
+            realDistance = radiusReal;
+            statusText = `${selectedSegment.name}: r=${radiusReal}mm | ø=${diameterReal}mm`;
+        } else {
+            // Per i segmenti: mostra distanza
+            pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
+            realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
+            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm`;
+        }
 
         const pixelSelElement = document.getElementById('pixelsel');
         const realSelElement = document.getElementById('realsel');
@@ -1038,7 +1554,7 @@ function updateMeasurement() {
 
         // Aggiorna status bar
         if (currentMeasurement) {
-            currentMeasurement.textContent = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm`;
+            currentMeasurement.textContent = statusText;
         }
     } else {
         const pixelSelElement = document.getElementById('pixelsel');
@@ -1107,14 +1623,26 @@ function updateSegmentsList() {
 function createSegmentListItem(segment, index) {
     const item = document.createElement('div');
     item.className = `list-group-item d-flex justify-content-between align-items-center ${segment === selectedSegment ? 'active' : ''}`;
-    
-    const pixelDistance = getPixelDistance(segment.start, segment.end);
-    const realDistance = calculateDistance(segment.start, segment.end);
-    
+
+    let pixelDistance, realDistance, measurementText;
+
+    if (segment.type === 'circle') {
+        // Per i cerchi: mostra raggio e diametro
+        pixelDistance = getPixelDistance(segment.center, segment.radiusPoint);
+        realDistance = calculateDistance(segment.center, segment.radiusPoint);
+        const diameterReal = (parseFloat(realDistance) * 2).toFixed(2);
+        measurementText = `r: ${realDistance}mm | ø: ${diameterReal}mm`;
+    } else {
+        // Per i segmenti: mostra distanza
+        pixelDistance = getPixelDistance(segment.start, segment.end);
+        realDistance = calculateDistance(segment.start, segment.end);
+        measurementText = `${pixelDistance.toFixed(1)}px → ${realDistance}mm`;
+    }
+
     item.innerHTML = `
         <div class="flex-grow-1">
             <div class="fw-bold segment-name" contenteditable="true" style="font-size: 0.9rem;">${segment.name}</div>
-            <div class="text-muted" style="font-size: 0.8rem;">${pixelDistance.toFixed(1)}px → ${realDistance}mm</div>
+            <div class="text-muted" style="font-size: 0.8rem;">${measurementText}</div>
         </div>
         <div class="btn-group btn-group-sm">
             <button class="btn btn-outline-primary select-btn" title="Seleziona">
@@ -1125,18 +1653,18 @@ function createSegmentListItem(segment, index) {
             </button>
         </div>
     `;
-    
+
     // Event listeners
     const nameElement = item.querySelector('.segment-name');
     const selectBtn = item.querySelector('.select-btn');
     const deleteBtn = item.querySelector('.delete-btn');
-    
+
     nameElement.addEventListener('blur', () => {
-        segment.name = nameElement.textContent.trim() || `Segmento ${index + 1}`;
+        segment.name = nameElement.textContent.trim() || (segment.type === 'circle' ? `Cerchio ${index + 1}` : `Segmento ${index + 1}`);
         nameElement.textContent = segment.name;
         updateMeasurement(); // Aggiorna la status bar
     });
-    
+
     selectBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedSegment = segment;
@@ -1145,19 +1673,19 @@ function createSegmentListItem(segment, index) {
         drawCanvas();
         showToast(`Selezionato: ${segment.name}`, 'info');
     });
-    
+
     deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         deleteSegment(segment);
     });
-    
+
     item.addEventListener('click', () => {
         selectedSegment = segment;
         updateMeasurement();
         updateSegmentsList();
         drawCanvas();
     });
-    
+
     return item;
 }
 
@@ -1359,50 +1887,12 @@ function resetView() {
 
 
 function zoomIn() {
-    const oldZoom = zoomFactor;
-    const newZoom = Math.min(7, oldZoom + 0.2);
-
-    if (oldZoom === newZoom) return;
-
-    const canvasCenterX = canvas.width / 2;
-    const canvasCenterY = canvas.height / 2;
-
-    // Adjust pan to keep the center of the screen stationary
-    const panXAdjust = (canvasCenterX / newZoom) - (canvasCenterX / oldZoom);
-    const panYAdjust = (canvasCenterY / newZoom) - (canvasCenterY / oldZoom);
-    
-    panX += panXAdjust;
-    panY += panYAdjust;
-
-    // Update image position based on new pan
-    imgX = centerX + panX;
-    imgY = centerY + panY;
-    
-    zoomFactor = newZoom;
+    zoomFactor = Math.min(5, zoomFactor + 0.2);
     drawCanvas();
 }
 
 function zoomOut() {
-    const oldZoom = zoomFactor;
-    const newZoom = Math.max(0.5, oldZoom - 0.2);
-
-    if (oldZoom === newZoom) return;
-
-    const canvasCenterX = canvas.width / 2;
-    const canvasCenterY = canvas.height / 2;
-
-    // Adjust pan to keep the center of the screen stationary
-    const panXAdjust = (canvasCenterX / newZoom) - (canvasCenterX / oldZoom);
-    const panYAdjust = (canvasCenterY / newZoom) - (canvasCenterY / oldZoom);
-    
-    panX += panXAdjust;
-    panY += panYAdjust;
-
-    // Update image position based on new pan
-    imgX = centerX + panX;
-    imgY = centerY + panY;
-    
-    zoomFactor = newZoom;
+    zoomFactor = Math.max(0.5, zoomFactor - 0.2);
     drawCanvas();
 }
 
@@ -1574,6 +2064,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const modeSegmentBtn = document.getElementById('mode-segment');
     const modeContinuousBtn = document.getElementById('mode-continuous');
     const modeRectangleBtn = document.getElementById('mode-rectangle');
+    const modeCircleBtn = document.getElementById('mode-circle');
 
     if (modeSelectBtn) {
         modeSelectBtn.addEventListener('click', () => {
@@ -1582,6 +2073,7 @@ document.addEventListener("DOMContentLoaded", function() {
             modeSegmentBtn?.classList.remove('active');
             modeContinuousBtn?.classList.remove('active');
             modeRectangleBtn?.classList.remove('active');
+            modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
@@ -1596,6 +2088,7 @@ document.addEventListener("DOMContentLoaded", function() {
             modeSegmentBtn.classList.add('active');
             modeContinuousBtn?.classList.remove('active');
             modeRectangleBtn?.classList.remove('active');
+            modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
@@ -1610,6 +2103,7 @@ document.addEventListener("DOMContentLoaded", function() {
             modeSegmentBtn?.classList.remove('active');
             modeContinuousBtn.classList.add('active');
             modeRectangleBtn?.classList.remove('active');
+            modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
@@ -1624,10 +2118,26 @@ document.addEventListener("DOMContentLoaded", function() {
             modeSegmentBtn?.classList.remove('active');
             modeContinuousBtn?.classList.remove('active');
             modeRectangleBtn.classList.add('active');
+            modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
             drawCanvas();
             showToast('Modalità Rettangolo attivata', 'info');
+        });
+    }
+
+    if (modeCircleBtn) {
+        modeCircleBtn.addEventListener('click', () => {
+            drawingMode = 'circle';
+            modeSelectBtn?.classList.remove('active');
+            modeSegmentBtn?.classList.remove('active');
+            modeContinuousBtn?.classList.remove('active');
+            modeRectangleBtn?.classList.remove('active');
+            modeCircleBtn.classList.add('active');
+            points = []; // Reset punti temporanei
+            previewPoint = null;
+            drawCanvas();
+            showToast('Modalità Cerchio attivata - primo click centro, secondo click raggio', 'info');
         });
     }
 
