@@ -66,7 +66,7 @@ const CONTROL_POINT_RADIUS = 4;         // Raggio punto controllo normale (fisso
 const CONTROL_POINT_SELECTED_RADIUS = 6; // Raggio punto controllo selezionato (fisso sullo schermo)
 const CONTROL_POINT_TEMP_RADIUS = 5;    // Raggio punti temporanei (fisso sullo schermo)
 const LABEL_FONT_SIZE = 12;             // Dimensione font etichette (fisso sullo schermo)
-const SNAP_DISTANCE = 20;               // Distanza massima per snap agli endpoint (in pixel immagine)
+const SNAP_DISTANCE = 20;               // Distanza massima per snap agli endpoint (in pixel schermo)
 const SEGMENT_SELECT_DISTANCE = 15;     // Distanza massima per selezione segmento
 
 // === FUNZIONI CORE ===
@@ -872,7 +872,7 @@ function handleMouseMove(event) {
                 let targetPoint = draggedPointType === 'start' ? draggedSegment.start : draggedSegment.end;
                 
                 // Controlla snap agli altri punti
-                const snapPoint = findNearestPointForDrag(coords.x, coords.y, targetPoint);
+                const snapPoint = findNearestEndpoint(coords.x, coords.y, targetPoint);
                 if (snapPoint) {
                     coords.x = snapPoint.x;
                     coords.y = snapPoint.y;
@@ -1063,7 +1063,7 @@ function handleTouchMove(event) {
                 let targetPoint = draggedPointType === 'start' ? draggedSegment.start : draggedSegment.end;
                 
                 // Controlla snap agli altri punti
-                const snapPoint = findNearestPointForDrag(coords.x, coords.y, targetPoint);
+                const snapPoint = findNearestEndpoint(coords.x, coords.y, targetPoint);
                 if (snapPoint) {
                     coords.x = snapPoint.x;
                     coords.y = snapPoint.y;
@@ -1419,73 +1419,12 @@ function getPixelDistance(point1, point2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-function findNearestEndpoint(x, y) {
+function findNearestEndpoint(x, y, excludePoint = null) {
     let nearestPoint = null;
-    let minDistance = SNAP_DISTANCE;
-
-    // Log ridotto: solo quando c'è un disegno in corso
-    // if (DEBUG_MODE && points.length > 0) {
-    //     const segInfo = segments.map((s, i) => `[${i}]:(${s.start.x.toFixed(0)},${s.start.y.toFixed(0)})->(${s.end.x.toFixed(0)},${s.end.y.toFixed(0)})`).join(' ');
-    //     addDebugLog('SNAP_CHECK_START', `segments.length=${segments.length} ${segInfo}, checking pos=(${x.toFixed(1)},${y.toFixed(1)}), hasFirstPoint=${points.length > 0}`);
-    // }
-
-    // Cerca tra tutti gli endpoint dei segmenti esistenti
-    segments.forEach((segment, idx) => {
-        // I cerchi non hanno endpoint per lo snap, salta
-        if (segment.type === 'circle') {
-            return;
-        }
-
-        // Controlla punto iniziale
-        const distToStart = getPixelDistance({ x, y }, segment.start);
-
-        // ESCLUDI il punto che corrisponde al primo punto del disegno corrente
-        const isFirstPoint = points.length > 0 &&
-                            Math.abs(points[0].x - segment.start.x) < 0.1 &&
-                            Math.abs(points[0].y - segment.start.y) < 0.1;
-
-        // Log solo se snap trovato E c'è un disegno in corso
-        if (DEBUG_MODE && points.length > 0 && distToStart <= SNAP_DISTANCE) {
-            const dx = Math.abs(points[0].x - segment.start.x);
-            const dy = Math.abs(points[0].y - segment.start.y);
-            addDebugLog('SNAP_DIST', `seg[${idx}].start=(${segment.start.x.toFixed(1)},${segment.start.y.toFixed(1)}) pt0=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) dx=${dx.toFixed(3)} dy=${dy.toFixed(3)} isFirstPt=${isFirstPoint}`);
-        }
-
-        if (!isFirstPoint && distToStart <= minDistance) {
-            minDistance = distToStart;
-            nearestPoint = { ...segment.start };
-        }
-
-        // Controlla punto finale
-        const distToEnd = getPixelDistance({ x, y }, segment.end);
-
-        // ESCLUDI il punto che corrisponde al primo punto del disegno corrente
-        const isFirstPointEnd = points.length > 0 &&
-                                Math.abs(points[0].x - segment.end.x) < 0.1 &&
-                                Math.abs(points[0].y - segment.end.y) < 0.1;
-
-        // Log solo se snap trovato E c'è un disegno in corso
-        if (DEBUG_MODE && points.length > 0 && distToEnd <= SNAP_DISTANCE) {
-            addDebugLog('SNAP_DIST_END', `seg[${idx}].end=(${segment.end.x.toFixed(1)},${segment.end.y.toFixed(1)}) pt0=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}) isFirstPt=${isFirstPointEnd}`);
-        }
-
-        if (!isFirstPointEnd && distToEnd <= minDistance) {
-            minDistance = distToEnd;
-            nearestPoint = { ...segment.end };
-        }
-    });
-
-    // Log ridotto: solo quando trova snap
-    if (DEBUG_MODE && nearestPoint && points.length > 0) {
-        addDebugLog('SNAP_FOUND_PREVIEW', `snap a (${nearestPoint.x.toFixed(1)},${nearestPoint.y.toFixed(1)})`);
-    }
-
-    return nearestPoint;
-}
-
-function findNearestPointForDrag(x, y, excludePoint) {
-    let nearestPoint = null;
-    let minDistance = SNAP_DISTANCE;
+    // Converti SNAP_DISTANCE da pixel schermo a pixel immagine
+    // Questo assicura che la distanza di snap sia costante visivamente
+    const effectiveSnapDistance = SNAP_DISTANCE / (scaleFactor * zoomFactor);
+    let minDistance = effectiveSnapDistance;
 
     // Cerca tra tutti gli endpoint dei segmenti esistenti
     segments.forEach((segment) => {
@@ -1494,22 +1433,32 @@ function findNearestPointForDrag(x, y, excludePoint) {
             return;
         }
 
-        // Controlla punto iniziale, escludendo il punto trascinato
-        if (segment.start !== excludePoint) {
-            const distToStart = getPixelDistance({ x, y }, segment.start);
-            if (distToStart <= minDistance) {
-                minDistance = distToStart;
-                nearestPoint = segment.start;
-            }
+        // Controlla punto iniziale
+        const distToStart = getPixelDistance({ x, y }, segment.start);
+
+        // Escludi il punto se è il primo punto del disegno corrente o il punto trascinato
+        const isExcludedStart = (excludePoint && segment.start === excludePoint) ||
+                                (points.length > 0 &&
+                                 Math.abs(points[0].x - segment.start.x) < 0.1 &&
+                                 Math.abs(points[0].y - segment.start.y) < 0.1);
+
+        if (!isExcludedStart && distToStart <= minDistance) {
+            minDistance = distToStart;
+            nearestPoint = { ...segment.start };
         }
 
-        // Controlla punto finale, escludendo il punto trascinato
-        if (segment.end !== excludePoint) {
-            const distToEnd = getPixelDistance({ x, y }, segment.end);
-            if (distToEnd <= minDistance) {
-                minDistance = distToEnd;
-                nearestPoint = segment.end;
-            }
+        // Controlla punto finale
+        const distToEnd = getPixelDistance({ x, y }, segment.end);
+
+        // Escludi il punto se è il primo punto del disegno corrente o il punto trascinato
+        const isExcludedEnd = (excludePoint && segment.end === excludePoint) ||
+                              (points.length > 0 &&
+                               Math.abs(points[0].x - segment.end.x) < 0.1 &&
+                               Math.abs(points[0].y - segment.end.y) < 0.1);
+
+        if (!isExcludedEnd && distToEnd <= minDistance) {
+            minDistance = distToEnd;
+            nearestPoint = { ...segment.end };
         }
     });
 
