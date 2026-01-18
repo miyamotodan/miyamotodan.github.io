@@ -972,8 +972,8 @@ function handleTouchStart(event) {
         const touch = touches[0];
         const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
 
-        // Check for double tap
-        if (currentTime - lastClickTime < 300) {
+        // Check for double tap (disabilitato in modalità selezione per evitare reset zoom accidentale)
+        if (currentTime - lastClickTime < 300 && drawingMode !== 'select') {
             handleDoubleTap();
             return;
         }
