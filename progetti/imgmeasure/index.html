@@ -245,7 +245,7 @@
     </div>
 
     <!-- Toast container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
         <div id="info-toast" class="toast" role="alert">
             <div class="toast-header">
                 <i class="fas fa-info-circle text-primary me-2"></i>
@@ -278,155 +278,256 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
-                        <i class="fas fa-question-circle me-2"></i>Guida & Informazioni
+                        <i class="fas fa-question-circle me-2"></i><span id="help-title">Guida & Informazioni</span>
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-light me-2" id="lang-toggle" title="Cambia lingua">
+                            <i class="fas fa-language"></i> EN
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
                 </div>
                 <div class="modal-body">
-                    <!-- Manuale d'uso -->
-                    <section class="mb-4">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-book me-2"></i>Manuale d'Uso
-                        </h5>
-                        <p class="lead">
-                            <strong>ImgMeasure</strong> è uno strumento per misurare distanze su immagini, ideale per copiare disegni su carta partendo da una fotografia o scansione.
-                        </p>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-upload me-2"></i><strong>1. Carica un'Immagine</strong>
-                            </div>
-                            <div class="card-body">
-                                Clicca sul pulsante <span class="badge bg-secondary">Carica</span> e seleziona la foto del disegno che vuoi riprodurre.
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-ruler me-2"></i><strong>2. Definisci la Scala di Riferimento</strong>
-                            </div>
-                            <div class="card-body">
-                                <ol class="mb-0">
-                                    <li>Disegna un segmento su una dimensione nota nell'immagine (es. un oggetto di cui conosci la misura reale)</li>
-                                    <li>Clicca sul segmento per selezionarlo</li>
-                                    <li>Nelle <strong>Impostazioni</strong>, inserisci la misura reale in millimetri</li>
-                                    <li>Tutte le successive misure saranno calcolate automaticamente in base a questa scala</li>
-                                </ol>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-drafting-compass me-2"></i><strong>3. Modalità di Disegno</strong>
-                            </div>
-                            <div class="card-body">
-                                <p><i class="fas fa-minus text-danger me-2"></i><strong>Segmento:</strong> Clicca due volte per creare una linea di misura singola</p>
-                                <p><i class="fas fa-wave-square text-danger me-2"></i><strong>Continuativo:</strong> Crea segmenti consecutivi - ogni punto finale diventa l'inizio del successivo (ideale per polilinee e percorsi)</p>
-                                <p class="mb-0"><i class="fas fa-square text-danger me-2"></i><strong>Rettangolo:</strong> Clicca due vertici opposti per creare un rettangolo (4 segmenti) - utile per misurare larghezza e altezza simultaneamente</p>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-eye me-2"></i><strong>4. Anteprima</strong>
-                            </div>
-                            <div class="card-body">
-                                Il pulsante <i class="fas fa-eye text-success"></i> attiva/disattiva l'anteprima in tempo reale mentre disegni. Quando attiva, vedrai il segmento o rettangolo prima di confermarlo.
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-search me-2"></i><strong>5. Zoom e Navigazione</strong>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Desktop:</strong> Tasto destro + trascina per spostare, bottoni <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> per zoom</p>
-                                <p class="mb-0"><strong>Touch:</strong> Pinch per zoom, un dito per spostare, doppio tap per reset</p>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-magnet me-2"></i><strong>6. Aggancio Automatico (Snap)</strong>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2">Quando clicchi vicino a un punto esistente (entro 20px), il nuovo punto si aggancia automaticamente all'endpoint per massima precisione.</p>
-                                <p class="mb-2"><strong>Indicatore visivo:</strong> Un cerchio colorato appare quando il cursore è vicino a un punto agganciabile</p>
-                                <p class="mb-0"><strong>Utile per:</strong> Chiudere forme, creare percorsi continui precisi, connettere misure multiple</p>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-keyboard me-2"></i><strong>7. Scorciatoie e Controlli</strong>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2"><kbd>ESC</kbd> o <i class="fas fa-times text-warning"></i> - Annulla il disegno corrente (utile in modalità continuativa per terminare la catena)</p>
-                                <p class="mb-0"><strong>Clic su primo punto:</strong> Deseleziona i segmenti per pulire la vista dalle etichette</p>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <i class="fas fa-palette me-2"></i><strong>8. Temi</strong>
-                            </div>
-                            <div class="card-body">
-                                Scegli tra 3 temi per migliorare la visibilità:
-                                <ul class="mb-0">
-                                    <li><i class="fas fa-sun text-warning me-2"></i><strong>Chiaro</strong> - Ideale per ambienti luminosi</li>
-                                    <li><i class="fas fa-moon text-info me-2"></i><strong>Scuro</strong> - Riduce l'affaticamento visivo</li>
-                                    <li><i class="fas fa-adjust me-2"></i><strong>Alto Contrasto</strong> - Massima accessibilità</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </section>
-
-                    <hr class="my-4">
-
-                    <!-- Credits & Donazioni -->
-                    <section class="text-center">
-                        <h5 class="text-primary mb-3">
-                            <i class="fas fa-heart me-2"></i>Supporta il Progetto
-                        </h5>
-                        <p>
-                            <strong>ImgMeasure</strong> è un software <strong>gratuito e open source</strong> sviluppato per aiutare artisti, artigiani e creativi nel loro lavoro.
-                        </p>
-                        <p class="text-muted">
-                            Se questo strumento ti è stato utile, considera una donazione volontaria per supportare lo sviluppo e la manutenzione del progetto.
-                        </p>
-
-                        <div class="card bg-light border-primary mb-3">
-                            <div class="card-body">
-                                <h6 class="card-title">
-                                    <i class="fab fa-paypal text-primary me-2"></i>Dona con PayPal
-                                </h6>
-                                <p class="card-text small text-muted mb-3">
-                                    Anche un piccolo contributo fa la differenza!
-                                </p>
-                                <a href="https://www.paypal.com/donate" target="_blank" class="btn btn-primary">
-                                    <i class="fab fa-paypal me-2"></i>Dona Ora
-                                </a>
-                                <p class="small text-muted mt-2 mb-0">
-                                    oppure invia a: <strong>donate@imgmeasure.app</strong>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="mt-4">
-                            <p class="small text-muted mb-1">
-                                <i class="fas fa-code me-2"></i>Sviluppato con <i class="fas fa-heart text-danger"></i> per la comunità creativa
+                    <!-- Contenuto Italiano -->
+                    <div id="help-content-it" class="help-content">
+                        <!-- Manuale d'uso -->
+                        <section class="mb-4">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-book me-2"></i>Manuale d'Uso
+                            </h5>
+                            <p class="lead">
+                                <strong>ImgMeasure</strong> è uno strumento per misurare distanze su immagini, ideale per copiare disegni su carta partendo da una fotografia o scansione.
                             </p>
-                            <p class="small text-muted mb-1">
-                                © 2024 ImgMeasure - Licenza Open Source
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-upload me-2"></i><strong>1. Carica un'Immagine</strong>
+                                </div>
+                                <div class="card-body">
+                                    Clicca sul pulsante <span class="badge bg-secondary">Carica</span> e seleziona la foto del disegno che vuoi riprodurre.
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-ruler me-2"></i><strong>2. Definisci la Scala di Riferimento</strong>
+                                </div>
+                                <div class="card-body">
+                                    <ol class="mb-0">
+                                        <li>Disegna un segmento su una dimensione nota nell'immagine (es. un oggetto di cui conosci la misura reale)</li>
+                                        <li>Clicca sul segmento per selezionarlo</li>
+                                        <li>Nelle <strong>Impostazioni</strong>, inserisci la misura reale in millimetri</li>
+                                        <li>Tutte le successive misure saranno calcolate automaticamente in base a questa scala</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-drafting-compass me-2"></i><strong>3. Modalità di Disegno</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><i class="fas fa-minus text-danger me-2"></i><strong>Segmento:</strong> Clicca due volte per creare una linea di misura singola</p>
+                                    <p><i class="fas fa-wave-square text-danger me-2"></i><strong>Continuativo:</strong> Crea segmenti consecutivi - ogni punto finale diventa l'inizio del successivo (ideale per polilinee e percorsi)</p>
+                                    <p><i class="fas fa-square text-danger me-2"></i><strong>Rettangolo:</strong> Clicca due vertici opposti per creare un rettangolo (4 segmenti) - utile per misurare larghezza e altezza simultaneamente</p>
+                                    <p class="mb-0"><i class="fas fa-circle text-danger me-2"></i><strong>Cerchio:</strong> Primo click sul centro, secondo click sul raggio - utile per misurare circonferenze e diametri</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-eye me-2"></i><strong>4. Anteprima</strong>
+                                </div>
+                                <div class="card-body">
+                                    Il pulsante <i class="fas fa-eye text-success"></i> attiva/disattiva l'anteprima in tempo reale mentre disegni. Quando attiva, vedrai il segmento o rettangolo prima di confermarlo.
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-ruler-combined me-2"></i><strong>5. Visibilità Segmenti</strong>
+                                </div>
+                                <div class="card-body">
+                                    Il pulsante <i class="fas fa-ruler-combined text-info"></i> mostra/nasconde tutti i segmenti disegnati. Utile per:
+                                    <ul class="mb-0">
+                                        <li>Ottenere una vista pulita dell'immagine originale</li>
+                                        <li>Concentrarsi sul disegno senza distrazioni</li>
+                                        <li>Confrontare misure con l'immagine di base</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-search me-2"></i><strong>6. Zoom e Navigazione</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Desktop:</strong> Tasto destro + trascina per spostare, bottoni <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> per zoom, doppio click per reset zoom e cancellazione ultimo segmento</p>
+                                    <p class="mb-0"><strong>Touch:</strong> Pinch per zoom, un dito per spostare, doppio tap per reset</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-magnet me-2"></i><strong>7. Aggancio Automatico (Snap)</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2">Quando clicchi vicino a un punto esistente (entro 20px), il nuovo punto si aggancia automaticamente all'endpoint per massima precisione.</p>
+                                    <p class="mb-2"><strong>Indicatore visivo:</strong> Un cerchio colorato appare quando il cursore è vicino a un punto agganciabile</p>
+                                    <p class="mb-2"><strong>Snap durante modifica:</strong> Quando trascini un vertice esistente vicino a un altro punto, si aggancia automaticamente, permettendo di collegare segmenti separati</p>
+                                    <p class="mb-0"><strong>Utile per:</strong> Chiudere forme, creare percorsi continui precisi, connettere misure multiple</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-keyboard me-2"></i><strong>8. Scorciatoie e Controlli</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2"><kbd>ESC</kbd> o <i class="fas fa-times text-warning"></i> - Annulla il disegno corrente (utile in modalità continuativa per terminare la catena)</p>
+                                    <p class="mb-0"><strong>Clic su primo punto:</strong> Deseleziona i segmenti per pulire la vista dalle etichette</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-palette me-2"></i><strong>9. Temi</strong>
+                                </div>
+                                <div class="card-body">
+                                    Scegli tra 3 temi per migliorare la visibilità:
+                                    <ul class="mb-0">
+                                        <li><i class="fas fa-sun text-warning me-2"></i><strong>Chiaro</strong> - Ideale per ambienti luminosi</li>
+                                        <li><i class="fas fa-moon text-info me-2"></i><strong>Scuro</strong> - Riduce l'affaticamento visivo</li>
+                                        <li><i class="fas fa-adjust me-2"></i><strong>Alto Contrasto</strong> - Massima accessibilità</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        </section>
+                    </div>
+
+                    <!-- Contenuto Inglese -->
+                    <div id="help-content-en" class="help-content d-none">
+                        <!-- User Manual -->
+                        <section class="mb-4">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-book me-2"></i>User Manual
+                            </h5>
+                            <p class="lead">
+                                <strong>ImgMeasure</strong> is a tool for measuring distances on images, ideal for copying paper drawings from a photograph or scan.
                             </p>
-                            <p class="small text-muted">
-                                Versione 1.0.11 debug
-                            </p>
-                        </div>
-                    </section>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-upload me-2"></i><strong>1. Load an Image</strong>
+                                </div>
+                                <div class="card-body">
+                                    Click the <span class="badge bg-secondary">Upload</span> button and select the photo of the drawing you want to reproduce.
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-ruler me-2"></i><strong>2. Define the Reference Scale</strong>
+                                </div>
+                                <div class="card-body">
+                                    <ol class="mb-0">
+                                        <li>Draw a segment on a known dimension in the image (e.g., an object whose real measurement you know)</li>
+                                        <li>Click on the segment to select it</li>
+                                        <li>In <strong>Settings</strong>, enter the real measurement in millimeters</li>
+                                        <li>All subsequent measurements will be calculated automatically based on this scale</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-drafting-compass me-2"></i><strong>3. Drawing Modes</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><i class="fas fa-minus text-danger me-2"></i><strong>Segment:</strong> Click twice to create a single measurement line</p>
+                                    <p><i class="fas fa-wave-square text-danger me-2"></i><strong>Continuous:</strong> Create consecutive segments - each end point becomes the start of the next (ideal for polylines and paths)</p>
+                                    <p><i class="fas fa-square text-danger me-2"></i><strong>Rectangle:</strong> Click two opposite vertices to create a rectangle (4 segments) - useful for measuring width and height simultaneously</p>
+                                    <p class="mb-0"><i class="fas fa-circle text-danger me-2"></i><strong>Circle:</strong> First click on center, second click on radius - useful for measuring circumferences and diameters</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-eye me-2"></i><strong>4. Preview</strong>
+                                </div>
+                                <div class="card-body">
+                                    The <i class="fas fa-eye text-success"></i> button enables/disables real-time preview while drawing. When active, you'll see the segment or rectangle before confirming it.
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-ruler-combined me-2"></i><strong>5. Segment Visibility</strong>
+                                </div>
+                                <div class="card-body">
+                                    The <i class="fas fa-ruler-combined text-info"></i> button shows/hides all drawn segments. Useful for:
+                                    <ul class="mb-0">
+                                        <li>Getting a clean view of the original image</li>
+                                        <li>Focusing on drawing without distractions</li>
+                                        <li>Comparing measurements with the base image</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-search me-2"></i><strong>6. Zoom and Navigation</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Desktop:</strong> Right-click + drag to move, <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> buttons for zoom, double click to reset zoom and delete last segment</p>
+                                    <p class="mb-0"><strong>Touch:</strong> Pinch for zoom, one finger to move, double tap to reset</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-magnet me-2"></i><strong>7. Automatic Snapping</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2">When you click near an existing point (within 20px), the new point automatically snaps to the endpoint for maximum precision.</p>
+                                    <p class="mb-2"><strong>Visual indicator:</strong> A colored circle appears when the cursor is near a snappable point</p>
+                                    <p class="mb-2"><strong>Snap during editing:</strong> When you drag an existing vertex near another point, it snaps automatically, allowing you to connect separate segments</p>
+                                    <p class="mb-0"><strong>Useful for:</strong> Closing shapes, creating precise continuous paths, connecting multiple measurements</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-keyboard me-2"></i><strong>8. Shortcuts and Controls</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2"><kbd>ESC</kbd> or <i class="fas fa-times text-warning"></i> - Cancel current drawing (useful in continuous mode to end the chain)</p>
+                                    <p class="mb-0"><strong>Click on first point:</strong> Deselect segments to clear labels from view</p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-palette me-2"></i><strong>9. Themes</strong>
+                                </div>
+                                <div class="card-body">
+                                    Choose from 3 themes to improve visibility:
+                                    <ul class="mb-0">
+                                        <li><i class="fas fa-sun text-warning me-2"></i><strong>Light</strong> - Ideal for bright environments</li>
+                                        <li><i class="fas fa-moon text-info me-2"></i><strong>Dark</strong> - Reduces eye strain</li>
+                                        <li><i class="fas fa-adjust me-2"></i><strong>High Contrast</strong> - Maximum accessibility</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        </section>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="help-close-btn">Chiudi</button>
                 </div>
             </div>
         </div>
@@ -462,28 +563,143 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
-                        <i class="fas fa-heart me-2"></i>Ti sta piacendo ImgMeasure?
+                        <i class="fas fa-heart me-2"></i><span id="feedback-title">Ti sta piacendo ImgMeasure?</span>
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-light me-2" id="feedback-lang-toggle" title="Cambia lingua">
+                            <i class="fas fa-language"></i> EN
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <p class="lead mb-4">Il tuo feedback è prezioso per migliorare l'app!</p>
-                    <p class="text-muted mb-4">
-                        Condividi la tua esperienza, suggerimenti o segnala problemi su GitHub.
-                    </p>
-                    <div class="d-grid gap-2">
-                        <a href="https://github.com/miyamotodan/imgmeasure/issues/new?labels=feedback&template=feedback.md&title=[Feedback]%20"
-                           target="_blank"
-                           class="btn btn-primary btn-lg"
-                           id="feedback-yes-btn">
-                            <i class="fab fa-github me-2"></i>Lascia un Feedback
-                        </a>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="feedback-later-btn">
-                            Magari dopo
-                        </button>
-                        <button type="button" class="btn btn-link text-muted" id="feedback-never-btn">
-                            Non mostrare più
-                        </button>
+                    <!-- Contenuto Italiano -->
+                    <div id="feedback-content-it">
+                        <p class="lead mb-4">Il tuo feedback è prezioso per migliorare l'app!</p>
+                        <p class="text-muted mb-4">
+                            Condividi la tua esperienza, suggerimenti o segnala problemi su GitHub.
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="https://github.com/miyamotodan/imgmeasure/issues/new?labels=feedback&template=feedback.md&title=[Feedback]%20"
+                               target="_blank"
+                               class="btn btn-primary btn-lg"
+                               id="feedback-yes-btn">
+                                <i class="fab fa-github me-2"></i>Lascia un Feedback
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="feedback-later-btn">
+                                Magari dopo
+                            </button>
+                            <button type="button" class="btn btn-link text-muted" id="feedback-never-btn">
+                                Non mostrare più
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenuto Inglese -->
+                    <div id="feedback-content-en" class="d-none">
+                        <p class="lead mb-4">Your feedback is valuable to improve the app!</p>
+                        <p class="text-muted mb-4">
+                            Share your experience, suggestions or report issues on GitHub.
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="https://github.com/miyamotodan/imgmeasure/issues/new?labels=feedback&template=feedback.md&title=[Feedback]%20"
+                               target="_blank"
+                               class="btn btn-primary btn-lg"
+                               id="feedback-yes-btn-en">
+                                <i class="fab fa-github me-2"></i>Leave Feedback
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="feedback-later-btn-en">
+                                Maybe later
+                            </button>
+                            <button type="button" class="btn btn-link text-muted" id="feedback-never-btn-en">
+                                Don't show again
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Sezione Supporto -->
+                    <div id="support-content-it">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-heart me-2"></i>Supporta il Progetto
+                        </h5>
+                        <p>
+                            <strong>ImgMeasure</strong> è un software <strong>gratuito e open source</strong> sviluppato per aiutare artisti, artigiani e creativi nel loro lavoro.
+                        </p>
+                        <p class="text-muted mb-3">
+                            Se questo strumento ti è stato utile, considera una donazione volontaria per supportare lo sviluppo e la manutenzione del progetto.
+                        </p>
+
+                        <div class="card bg-light border-primary mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fab fa-paypal text-primary me-2"></i>Dona con PayPal
+                                </h6>
+                                <p class="card-text small text-muted mb-3">
+                                    Anche un piccolo contributo fa la differenza!
+                                </p>
+                                <a href="https://www.paypal.com/donate" target="_blank" class="btn btn-primary">
+                                    <i class="fab fa-paypal me-2"></i>Dona Ora
+                                </a>
+                                <p class="small text-muted mt-2 mb-0">
+                                    oppure invia a: <strong>donate@imgmeasure.app</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <p class="small text-muted mb-1">
+                                <i class="fas fa-code me-2"></i>Sviluppato con <i class="fas fa-heart text-danger"></i> per la comunità creativa
+                            </p>
+                            <p class="small text-muted mb-1">
+                                © 2024 ImgMeasure - Licenza Open Source
+                            </p>
+                            <p class="small text-muted">
+                                Versione 1.0.11 debug
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="support-content-en" class="d-none">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-heart me-2"></i>Support the Project
+                        </h5>
+                        <p>
+                            <strong>ImgMeasure</strong> is <strong>free and open source</strong> software developed to help artists, craftsmen, and creatives in their work.
+                        </p>
+                        <p class="text-muted mb-3">
+                            If this tool has been useful to you, consider a voluntary donation to support the development and maintenance of the project.
+                        </p>
+
+                        <div class="card bg-light border-primary mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fab fa-paypal text-primary me-2"></i>Donate with PayPal
+                                </h6>
+                                <p class="card-text small text-muted mb-3">
+                                    Even a small contribution makes a difference!
+                                </p>
+                                <a href="https://www.paypal.com/donate" target="_blank" class="btn btn-primary">
+                                    <i class="fab fa-paypal me-2"></i>Donate Now
+                                </a>
+                                <p class="small text-muted mt-2 mb-0">
+                                    or send to: <strong>donate@imgmeasure.app</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <p class="small text-muted mb-1">
+                                <i class="fas fa-code me-2"></i>Developed with <i class="fas fa-heart text-danger"></i> for the creative community
+                            </p>
+                            <p class="small text-muted mb-1">
+                                © 2024 ImgMeasure - Open Source License
+                            </p>
+                            <p class="small text-muted">
+                                Version 1.0.11 debug
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

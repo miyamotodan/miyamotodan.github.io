@@ -684,6 +684,7 @@ function drawCirclePreviewMeasurementLabel(center, radiusPoint, centerX, centerY
 
 // === GESTIONE EVENTI TOUCH E CLICK ===
 canvas.addEventListener('click', handleCanvasClick);
+canvas.addEventListener('dblclick', handleDoubleClick);
 canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -710,8 +711,10 @@ let draggedPointType = null; // 'start' o 'end'
 
 // Variabile per prevenire eventi duplicati
 let lastClickTime = 0;
+let lastDoubleClickTime = 0;
 let clickCooldown = 100; // ms
 let lastTouchEndTime = 0; // Per bloccare eventi mouse dopo touch
+let pendingSegmentTimer = null; // Timer per differire la creazione del segmento
 
 // Funzione centralizzata per gestire tutti i click/tap
 function handlePointCreation(clientX, clientY) {
@@ -866,13 +869,17 @@ function handleMouseMove(event) {
                 }
             } else {
                 // Per i segmenti
-                if (draggedPointType === 'start') {
-                    draggedSegment.start.x = coords.x;
-                    draggedSegment.start.y = coords.y;
-                } else {
-                    draggedSegment.end.x = coords.x;
-                    draggedSegment.end.y = coords.y;
+                let targetPoint = draggedPointType === 'start' ? draggedSegment.start : draggedSegment.end;
+                
+                // Controlla snap agli altri punti
+                const snapPoint = findNearestPointForDrag(coords.x, coords.y, targetPoint);
+                if (snapPoint) {
+                    coords.x = snapPoint.x;
+                    coords.y = snapPoint.y;
                 }
+                
+                targetPoint.x = coords.x;
+                targetPoint.y = coords.y;
             }
 
             updateMeasurement();
@@ -949,13 +956,21 @@ function handleCanvasClick(event) {
 
     const currentTime = Date.now();
     const timeSinceTouchEnd = currentTime - lastTouchEndTime;
+    const timeSinceDoubleClick = currentTime - lastDoubleClickTime;
 
-    addDebugLog('CLICK', `timeSinceTouchEnd=${timeSinceTouchEnd}ms, points.length=${points.length}`);
+    addDebugLog('CLICK', `timeSinceTouchEnd=${timeSinceTouchEnd}ms, timeSinceDoubleClick=${timeSinceDoubleClick}ms, points.length=${points.length}`);
 
     // Su tablet con pennino, previeni eventi mouse duplicati dopo touch
     // Se è passato meno di 500ms dall'ultimo touchEnd, ignora il click
     if (timeSinceTouchEnd < 500) {
         addDebugLog('CLICK_IGNORED', `troppo vicino a touchEnd (${timeSinceTouchEnd}ms)`);
+        return;
+    }
+
+    // Previeni eventi click duplicati dopo dblclick
+    // Se è passato meno di 300ms dall'ultimo dblclick, ignora il click
+    if (timeSinceDoubleClick < 300) {
+        addDebugLog('CLICK_IGNORED', `troppo vicino a dblclick (${timeSinceDoubleClick}ms)`);
         return;
     }
 
@@ -1045,13 +1060,17 @@ function handleTouchMove(event) {
                 }
             } else {
                 // Per i segmenti
-                if (draggedPointType === 'start') {
-                    draggedSegment.start.x = coords.x;
-                    draggedSegment.start.y = coords.y;
-                } else {
-                    draggedSegment.end.x = coords.x;
-                    draggedSegment.end.y = coords.y;
+                let targetPoint = draggedPointType === 'start' ? draggedSegment.start : draggedSegment.end;
+                
+                // Controlla snap agli altri punti
+                const snapPoint = findNearestPointForDrag(coords.x, coords.y, targetPoint);
+                if (snapPoint) {
+                    coords.x = snapPoint.x;
+                    coords.y = snapPoint.y;
                 }
+                
+                targetPoint.x = coords.x;
+                targetPoint.y = coords.y;
             }
 
             updateMeasurement();
@@ -1093,7 +1112,9 @@ function handleTouchMove(event) {
         // Pinch to zoom
         const distance = getDistance(event.touches[0], event.touches[1]);
         const scale = distance / initialDistance;
+        const oldZoom = zoomFactor;
         zoomFactor = Math.max(0.5, Math.min(5, initialZoom * scale));
+        adjustPanForZoom(oldZoom, zoomFactor);
         drawCanvas();
     }
 }
@@ -1114,9 +1135,14 @@ function handleTouchEnd(event) {
             showToast('Punto spostato', 'success');
         } else if (!isPanning && !isMultiTouch && touches.length === 1) {
             // Single tap without pan
-            const touch = touches[0];
-            addDebugLog('TOUCH_TAP', `calling handlePointCreation, points.length=${points.length}`);
-            handlePointCreation(touch.clientX, touch.clientY);
+            const currentTime = Date.now();
+            if (currentTime - lastDoubleClickTime < 300) {
+                addDebugLog('TOUCH_TAP_IGNORED', `double tap recente (${currentTime - lastDoubleClickTime}ms)`);
+            } else {
+                const touch = touches[0];
+                addDebugLog('TOUCH_TAP', `calling handlePointCreation, points.length=${points.length}`);
+                handlePointCreation(touch.clientX, touch.clientY);
+            }
         } else {
             addDebugLog('TOUCH_END_NO_ACTION', `isPanning=${isPanning}, isMultiTouch=${isMultiTouch}, touches.length=${touches.length}`);
         }
@@ -1132,9 +1158,66 @@ function handleTouchEnd(event) {
 }
 
 function handleDoubleTap() {
-    // Double tap to reset zoom
+    lastDoubleClickTime = Date.now(); // Usa la stessa variabile per semplicità
+    // Double tap to reset zoom and cancel current drawing
+    let actionTaken = false;
+    
+    // Cancel any pending segment creation
+    if (pendingSegmentTimer) {
+        clearTimeout(pendingSegmentTimer);
+        pendingSegmentTimer = null;
+        addDebugLog('PENDING_SEGMENT_CANCELLED', 'creazione segmento pendente annullata dal double tap');
+        actionTaken = true;
+    }
+    
+    // First, cancel any current drawing in progress
+    if (points.length > 0) {
+        points = [];
+        previewPoint = null;
+        snapPreviewPoint = null;
+        addDebugLog('DRAWING_CANCELLED', 'disegno in corso annullato dal double tap');
+        actionTaken = true;
+    }
+    
     resetView();
-    showToast('Zoom reimpostato', 'info');
+    
+    if (actionTaken) {
+        // No toast for silent cancellation
+    } else {
+        showToast('Zoom reimpostato', 'info');
+    }
+}
+
+function handleDoubleClick(event) {
+    event.preventDefault();
+    lastDoubleClickTime = Date.now();
+    // Double click to reset zoom and cancel current drawing
+    let actionTaken = false;
+    
+    // Cancel any pending segment creation
+    if (pendingSegmentTimer) {
+        clearTimeout(pendingSegmentTimer);
+        pendingSegmentTimer = null;
+        addDebugLog('PENDING_SEGMENT_CANCELLED', 'creazione segmento pendente annullata dal doppio click');
+        actionTaken = true;
+    }
+    
+    // First, cancel any current drawing in progress
+    if (points.length > 0) {
+        points = [];
+        previewPoint = null;
+        snapPreviewPoint = null;
+        addDebugLog('DRAWING_CANCELLED', 'disegno in corso annullato dal doppio click');
+        actionTaken = true;
+    }
+    
+    resetView();
+    
+    if (actionTaken) {
+        // No toast for silent cancellation
+    } else {
+        showToast('Zoom reimpostato', 'info');
+    }
 }
 
 function getCanvasCoordinates(clientX, clientY) {
@@ -1193,17 +1276,31 @@ function addPoint(x, y) {
     addDebugLog('ADD_POINT', `aggiunto punto ${points.length}: (${x.toFixed(1)}, ${y.toFixed(1)}) - points[0]=${points[0] ? `(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)})` : 'null'}`);
 
     if (points.length === 2) {
-        createSegment();
+        // Differisci la creazione del segmento per permettere l'annullamento con double click
+        pendingSegmentTimer = setTimeout(() => {
+            createSegment();
+            pendingSegmentTimer = null;
+            // Forza il ridisegno per assicurarsi che il segmento appaia
+            requestAnimationFrame(() => drawCanvas());
+        }, 300); // 300ms per permettere double click
     }
 
     drawCanvas();
 }
 
 function cancelCurrentDrawing() {
+    if (pendingSegmentTimer) {
+        clearTimeout(pendingSegmentTimer);
+        pendingSegmentTimer = null;
+    }
     if (points.length > 0) {
         points = [];
         previewPoint = null;
         snapPreviewPoint = null;
+        // Reset drag state
+        isDraggingPoint = false;
+        draggedSegment = null;
+        draggedPointType = null;
         drawCanvas();
         showToast('Disegno annullato', 'info');
         return true;
@@ -1231,6 +1328,7 @@ function createSegment() {
         updateSegmentsList();
         checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Nuovo segmento creato', 'success');
+        drawCanvas();
     } else if (drawingMode === 'continuous') {
         // Modalità segmento continuativo
         const segment = {
@@ -1251,6 +1349,7 @@ function createSegment() {
         updateSegmentsList();
         checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Segmento aggiunto alla catena', 'success');
+        drawCanvas();
     } else if (drawingMode === 'rectangle') {
         // Modalità rettangolo: crea 4 segmenti
         const minX = Math.min(points[0].x, points[1].x);
@@ -1290,6 +1389,7 @@ function createSegment() {
         updateSegmentsList();
         checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Nuovo rettangolo creato (4 segmenti)', 'success');
+        drawCanvas();
     } else if (drawingMode === 'circle') {
         // Modalità cerchio: crea un cerchio con centro e punto sul raggio
         const circle = {
@@ -1309,6 +1409,7 @@ function createSegment() {
         updateSegmentsList();
         checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
         showToast('Nuovo cerchio creato', 'success');
+        drawCanvas();
     }
 }
 
@@ -1378,6 +1479,39 @@ function findNearestEndpoint(x, y) {
     if (DEBUG_MODE && nearestPoint && points.length > 0) {
         addDebugLog('SNAP_FOUND_PREVIEW', `snap a (${nearestPoint.x.toFixed(1)},${nearestPoint.y.toFixed(1)})`);
     }
+
+    return nearestPoint;
+}
+
+function findNearestPointForDrag(x, y, excludePoint) {
+    let nearestPoint = null;
+    let minDistance = SNAP_DISTANCE;
+
+    // Cerca tra tutti gli endpoint dei segmenti esistenti
+    segments.forEach((segment) => {
+        // I cerchi non hanno endpoint per lo snap, salta
+        if (segment.type === 'circle') {
+            return;
+        }
+
+        // Controlla punto iniziale, escludendo il punto trascinato
+        if (segment.start !== excludePoint) {
+            const distToStart = getPixelDistance({ x, y }, segment.start);
+            if (distToStart <= minDistance) {
+                minDistance = distToStart;
+                nearestPoint = segment.start;
+            }
+        }
+
+        // Controlla punto finale, escludendo il punto trascinato
+        if (segment.end !== excludePoint) {
+            const distToEnd = getPixelDistance({ x, y }, segment.end);
+            if (distToEnd <= minDistance) {
+                minDistance = distToEnd;
+                nearestPoint = segment.end;
+            }
+        }
+    });
 
     return nearestPoint;
 }
@@ -1887,13 +2021,38 @@ function resetView() {
 
 
 function zoomIn() {
+    const oldZoom = zoomFactor;
     zoomFactor = Math.min(5, zoomFactor + 0.2);
+    adjustPanForZoom(oldZoom, zoomFactor);
     drawCanvas();
 }
 
 function zoomOut() {
+    const oldZoom = zoomFactor;
     zoomFactor = Math.max(0.5, zoomFactor - 0.2);
+    adjustPanForZoom(oldZoom, zoomFactor);
     drawCanvas();
+}
+
+// === FUNZIONI ZOOM ===
+function adjustPanForZoom(oldZoom, newZoom) {
+    if (!img.width || !img.height) return;
+    
+    // Calcola il centro desiderato nel sistema scalato
+    const targetCenterX = canvas.width / 2 / newZoom;
+    const targetCenterY = canvas.height / 2 / newZoom;
+    
+    // Il centro dell'immagine dovrebbe essere al centro del canvas scalato
+    const imageCenterX = (img.width * scaleFactor) / 2;
+    const imageCenterY = (img.height * scaleFactor) / 2;
+    
+    // Calcola panX e panY per centrare l'immagine
+    panX = targetCenterX - centerX - imageCenterX;
+    panY = targetCenterY - centerY - imageCenterY;
+    
+    // Aggiorna imgX e imgY
+    imgX = centerX + panX;
+    imgY = centerY + panY;
 }
 
 // === FUNZIONI TEMA ===
@@ -2076,6 +2235,11 @@ document.addEventListener("DOMContentLoaded", function() {
             modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
+            snapPreviewPoint = null;
+            // Reset drag state
+            isDraggingPoint = false;
+            draggedSegment = null;
+            draggedPointType = null;
             drawCanvas();
             showToast('Modalità Selezione attivata - clicca sui segmenti per selezionarli', 'info');
         });
@@ -2091,6 +2255,11 @@ document.addEventListener("DOMContentLoaded", function() {
             modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
+            snapPreviewPoint = null;
+            // Reset drag state
+            isDraggingPoint = false;
+            draggedSegment = null;
+            draggedPointType = null;
             drawCanvas();
             showToast('Modalità Segmento attivata', 'info');
         });
@@ -2106,6 +2275,11 @@ document.addEventListener("DOMContentLoaded", function() {
             modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
+            snapPreviewPoint = null;
+            // Reset drag state
+            isDraggingPoint = false;
+            draggedSegment = null;
+            draggedPointType = null;
             drawCanvas();
             showToast('Modalità Segmento Continuativo attivata', 'info');
         });
@@ -2121,6 +2295,11 @@ document.addEventListener("DOMContentLoaded", function() {
             modeCircleBtn?.classList.remove('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
+            snapPreviewPoint = null;
+            // Reset drag state
+            isDraggingPoint = false;
+            draggedSegment = null;
+            draggedPointType = null;
             drawCanvas();
             showToast('Modalità Rettangolo attivata', 'info');
         });
@@ -2136,6 +2315,11 @@ document.addEventListener("DOMContentLoaded", function() {
             modeCircleBtn.classList.add('active');
             points = []; // Reset punti temporanei
             previewPoint = null;
+            snapPreviewPoint = null;
+            // Reset drag state
+            isDraggingPoint = false;
+            draggedSegment = null;
+            draggedPointType = null;
             drawCanvas();
             showToast('Modalità Cerchio attivata - primo click centro, secondo click raggio', 'info');
         });
@@ -2252,6 +2436,94 @@ document.addEventListener("DOMContentLoaded", function() {
     if (feedbackNeverBtn) {
         feedbackNeverBtn.addEventListener('click', () => {
             handleFeedbackResponse('never');
+        });
+    }
+
+    // Feedback buttons for English version
+    const feedbackYesBtnEn = document.getElementById('feedback-yes-btn-en');
+    const feedbackLaterBtnEn = document.getElementById('feedback-later-btn-en');
+    const feedbackNeverBtnEn = document.getElementById('feedback-never-btn-en');
+
+    if (feedbackYesBtnEn) {
+        feedbackYesBtnEn.addEventListener('click', () => {
+            handleFeedbackResponse('yes');
+        });
+    }
+
+    if (feedbackLaterBtnEn) {
+        feedbackLaterBtnEn.addEventListener('click', () => {
+            handleFeedbackResponse('later');
+        });
+    }
+
+    if (feedbackNeverBtnEn) {
+        feedbackNeverBtnEn.addEventListener('click', () => {
+            handleFeedbackResponse('never');
+        });
+    }
+
+    // Language toggle for help modal
+    const langToggle = document.getElementById('lang-toggle');
+    const helpTitle = document.getElementById('help-title');
+    const helpContentIt = document.getElementById('help-content-it');
+    const helpContentEn = document.getElementById('help-content-en');
+    const helpCloseBtn = document.getElementById('help-close-btn');
+
+    let currentLang = 'it'; // Default to Italian
+
+    if (langToggle) {
+        langToggle.addEventListener('click', () => {
+            if (currentLang === 'it') {
+                // Switch to English
+                currentLang = 'en';
+                helpTitle.textContent = 'Help & Information';
+                helpCloseBtn.textContent = 'Close';
+                langToggle.innerHTML = '<i class="fas fa-language"></i> IT';
+                helpContentIt.classList.add('d-none');
+                helpContentEn.classList.remove('d-none');
+            } else {
+                // Switch to Italian
+                currentLang = 'it';
+                helpTitle.textContent = 'Guida & Informazioni';
+                helpCloseBtn.textContent = 'Chiudi';
+                langToggle.innerHTML = '<i class="fas fa-language"></i> EN';
+                helpContentEn.classList.add('d-none');
+                helpContentIt.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Language toggle for feedback modal
+    const feedbackLangToggle = document.getElementById('feedback-lang-toggle');
+    const feedbackTitle = document.getElementById('feedback-title');
+    const feedbackContentIt = document.getElementById('feedback-content-it');
+    const feedbackContentEn = document.getElementById('feedback-content-en');
+    const supportContentIt = document.getElementById('support-content-it');
+    const supportContentEn = document.getElementById('support-content-en');
+
+    let feedbackCurrentLang = 'it'; // Default to Italian
+
+    if (feedbackLangToggle) {
+        feedbackLangToggle.addEventListener('click', () => {
+            if (feedbackCurrentLang === 'it') {
+                // Switch to English
+                feedbackCurrentLang = 'en';
+                feedbackTitle.textContent = 'Are you enjoying ImgMeasure?';
+                feedbackLangToggle.innerHTML = '<i class="fas fa-language"></i> IT';
+                feedbackContentIt.classList.add('d-none');
+                feedbackContentEn.classList.remove('d-none');
+                supportContentIt.classList.add('d-none');
+                supportContentEn.classList.remove('d-none');
+            } else {
+                // Switch to Italian
+                feedbackCurrentLang = 'it';
+                feedbackTitle.textContent = 'Ti sta piacendo ImgMeasure?';
+                feedbackLangToggle.innerHTML = '<i class="fas fa-language"></i> EN';
+                feedbackContentEn.classList.add('d-none');
+                feedbackContentIt.classList.remove('d-none');
+                supportContentEn.classList.add('d-none');
+                supportContentIt.classList.remove('d-none');
+            }
         });
     }
 
