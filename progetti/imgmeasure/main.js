@@ -78,14 +78,20 @@ function loadImage(event) {
     
     img.onload = function() {
         resizeCanvas();
-        segments = [];
         points = [];
         selectedSegment = null;
-        segmentCounter = 1;
-        zoomFactor = 1; // Reset zoom when loading new image
+        zoomFactor = 1;
+
+        // Ripristina segmenti salvati (solo al primo caricamento immagine)
+        const wasEmpty = segments.length === 0;
+        if (wasEmpty) {
+            loadStateFromStorage();
+        }
+
         drawCanvas();
         updateSegmentsList();
-        showToast('Immagine caricata con successo', 'success');
+        const hint = segments.length > 0 && wasEmpty ? ` (${segments.length} segmenti ripristinati)` : '';
+        showToast(`Immagine caricata con successo${hint}`, 'success');
     };
 }
 
@@ -987,8 +993,8 @@ function handleTouchStart(event) {
         const touch = touches[0];
         const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
 
-        // Check for double tap (disabilitato in modalità selezione per evitare reset zoom accidentale)
-        if (currentTime - lastClickTime < 300 && drawingMode !== 'select') {
+        // Check for double tap (disabilitato in modalità selezione e durante disegno in corso per evitare reset zoom accidentale con pennino)
+        if (currentTime - lastClickTime < 300 && drawingMode !== 'select' && points.length === 0) {
             handleDoubleTap();
             return;
         }
@@ -1112,9 +1118,8 @@ function handleTouchMove(event) {
         // Pinch to zoom
         const distance = getDistance(event.touches[0], event.touches[1]);
         const scale = distance / initialDistance;
-        const oldZoom = zoomFactor;
         zoomFactor = Math.max(0.5, Math.min(5, initialZoom * scale));
-        adjustPanForZoom(oldZoom, zoomFactor);
+        adjustPanForZoom(zoomFactor);
         drawCanvas();
     }
 }
@@ -1190,6 +1195,8 @@ function handleDoubleTap() {
 
 function handleDoubleClick(event) {
     event.preventDefault();
+    // Se siamo su tablet con pennino, il double-tap è già gestito da handleTouchStart — evita doppio reset
+    if (Date.now() - lastTouchEndTime < 500) return;
     lastDoubleClickTime = Date.now();
     // Double click to reset zoom and cancel current drawing
     let actionTaken = false;
@@ -1696,11 +1703,13 @@ function updateSegmentsList() {
     }
     
     segmentsList.innerHTML = '';
-    
+
     segments.forEach((segment, index) => {
         const segmentItem = createSegmentListItem(segment, index);
         segmentsList.appendChild(segmentItem);
     });
+
+    saveStateToStorage();
 }
 
 function createSegmentListItem(segment, index) {
@@ -1970,21 +1979,19 @@ function resetView() {
 
 
 function zoomIn() {
-    const oldZoom = zoomFactor;
     zoomFactor = Math.min(5, zoomFactor + 0.2);
-    adjustPanForZoom(oldZoom, zoomFactor);
+    adjustPanForZoom(zoomFactor);
     drawCanvas();
 }
 
 function zoomOut() {
-    const oldZoom = zoomFactor;
     zoomFactor = Math.max(0.5, zoomFactor - 0.2);
-    adjustPanForZoom(oldZoom, zoomFactor);
+    adjustPanForZoom(zoomFactor);
     drawCanvas();
 }
 
 // === FUNZIONI ZOOM ===
-function adjustPanForZoom(oldZoom, newZoom) {
+function adjustPanForZoom(newZoom) {
     if (!img.width || !img.height) return;
     
     // Calcola il centro desiderato nel sistema scalato
@@ -2022,6 +2029,41 @@ function setTheme(theme) {
         'contrast': 'Alto Contrasto'
     };
     showToast(`${themeNames[theme]} attivato`, 'info');
+}
+
+// === SALVATAGGIO E RIPRISTINO STATO ===
+
+function saveStateToStorage() {
+    try {
+        const state = {
+            segments: segments,
+            segmentCounter: segmentCounter
+        };
+        localStorage.setItem('imgmeasure-state', JSON.stringify(state));
+    } catch (e) {
+        console.warn('Impossibile salvare lo stato:', e);
+    }
+}
+
+function loadStateFromStorage() {
+    try {
+        const saved = localStorage.getItem('imgmeasure-state');
+        if (!saved) return;
+
+        const state = JSON.parse(saved);
+        if (!state.segments || !Array.isArray(state.segments) || state.segments.length === 0) return;
+
+        segments = state.segments;
+        segmentCounter = state.segmentCounter || (segments.length + 1);
+
+        updateSegmentsList();
+        drawCanvas();
+
+        showToast(`${segments.length} segmenti ripristinati. Carica l'immagine per visualizzarli.`, 'info');
+    } catch (e) {
+        console.warn('Impossibile ripristinare lo stato:', e);
+        localStorage.removeItem('imgmeasure-state');
+    }
 }
 
 function loadThemeFromStorage() {
@@ -2095,42 +2137,29 @@ document.addEventListener("DOMContentLoaded", function() {
         uploadElement.addEventListener('change', loadImage);
     }
 
-    // Theme buttons
-    const themeLightBtn = document.getElementById('theme-light');
-    const themeDarkBtn = document.getElementById('theme-dark');
-    const themeContrastBtn = document.getElementById('theme-contrast');
+    // Theme cycle button
+    const themeOrder = ['dark', 'light', 'contrast'];
+    const themeIcons = { dark: 'fa-moon', light: 'fa-sun', contrast: 'fa-adjust' };
 
-    if (themeLightBtn) {
-        themeLightBtn.addEventListener('click', () => {
-            setTheme('light');
-            themeLightBtn.classList.add('active');
-            themeDarkBtn.classList.remove('active');
-            themeContrastBtn.classList.remove('active');
+    function updateThemeBtn() {
+        const btn = document.getElementById('theme-cycle');
+        if (!btn) return;
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = `fas ${themeIcons[currentTheme]}`;
+        }
+    }
+
+    const themeCycleBtn = document.getElementById('theme-cycle');
+    if (themeCycleBtn) {
+        themeCycleBtn.addEventListener('click', () => {
+            const nextIndex = (themeOrder.indexOf(currentTheme) + 1) % themeOrder.length;
+            setTheme(themeOrder[nextIndex]);
+            updateThemeBtn();
         });
     }
 
-    if (themeDarkBtn) {
-        themeDarkBtn.addEventListener('click', () => {
-            setTheme('dark');
-            themeDarkBtn.classList.add('active');
-            themeLightBtn.classList.remove('active');
-            themeContrastBtn.classList.remove('active');
-        });
-    }
-
-    if (themeContrastBtn) {
-        themeContrastBtn.addEventListener('click', () => {
-            setTheme('contrast');
-            themeContrastBtn.classList.add('active');
-            themeLightBtn.classList.remove('active');
-            themeDarkBtn.classList.remove('active');
-        });
-    }
-
-    // Imposta il pulsante attivo in base al tema corrente
-    if (currentTheme === 'light') themeLightBtn?.classList.add('active');
-    else if (currentTheme === 'dark') themeDarkBtn?.classList.add('active');
-    else if (currentTheme === 'contrast') themeContrastBtn?.classList.add('active');
+    updateThemeBtn();
 
     // Toggle segments visibility button
     const toggleSegmentsBtn = document.getElementById('toggle-segments');
@@ -2416,9 +2445,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const helpTitle = document.getElementById('help-title');
     const helpContentIt = document.getElementById('help-content-it');
     const helpContentEn = document.getElementById('help-content-en');
-    const helpCloseBtn = document.getElementById('help-close-btn');
-
     let currentLang = 'it'; // Default to Italian
+
+    const helpCloseLabelIt = document.getElementById('help-close-label-it');
+    const helpCloseLabelEn = document.getElementById('help-close-label-en');
 
     if (langToggle) {
         langToggle.addEventListener('click', () => {
@@ -2426,7 +2456,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Switch to English
                 currentLang = 'en';
                 helpTitle.textContent = 'Help & Information';
-                helpCloseBtn.textContent = 'Close';
+                helpCloseLabelIt.classList.add('d-none');
+                helpCloseLabelEn.classList.remove('d-none');
                 langToggle.innerHTML = '<i class="fas fa-language"></i> IT';
                 helpContentIt.classList.add('d-none');
                 helpContentEn.classList.remove('d-none');
@@ -2434,7 +2465,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Switch to Italian
                 currentLang = 'it';
                 helpTitle.textContent = 'Guida & Informazioni';
-                helpCloseBtn.textContent = 'Chiudi';
+                helpCloseLabelIt.classList.remove('d-none');
+                helpCloseLabelEn.classList.add('d-none');
                 langToggle.innerHTML = '<i class="fas fa-language"></i> EN';
                 helpContentEn.classList.add('d-none');
                 helpContentIt.classList.remove('d-none');

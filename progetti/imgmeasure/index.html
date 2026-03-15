@@ -117,17 +117,9 @@
 
                 <!-- 6. TEMI -->
                 <div class="nav-item">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-light" id="theme-light" title="Tema Chiaro">
-                            <i class="fas fa-sun"></i>
-                        </button>
-                        <button class="btn btn-outline-light active" id="theme-dark" title="Tema Scuro">
-                            <i class="fas fa-moon"></i>
-                        </button>
-                        <button class="btn btn-outline-light" id="theme-contrast" title="Alto Contrasto">
-                            <i class="fas fa-adjust"></i>
-                        </button>
-                    </div>
+                    <button class="btn btn-outline-light btn-sm" id="theme-cycle" title="Cambia tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
                 </div>
 
                 <!-- Separatore visivo -->
@@ -290,244 +282,284 @@
                 <div class="modal-body">
                     <!-- Contenuto Italiano -->
                     <div id="help-content-it" class="help-content">
-                        <!-- Manuale d'uso -->
                         <section class="mb-4">
                             <h5 class="text-primary mb-3">
                                 <i class="fas fa-book me-2"></i>Manuale d'Uso
                             </h5>
                             <p class="lead">
-                                <strong>ImgMeasure</strong> è uno strumento per misurare distanze su immagini, ideale per copiare disegni su carta partendo da una fotografia o scansione.
+                                <strong>ImgMeasure</strong> è uno strumento per misurare distanze su immagini direttamente nel browser, senza installazioni. Ideale per rilevare quote da fotografie, scansioni e disegni tecnici.
                             </p>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-upload me-2"></i><strong>1. Carica un'Immagine</strong>
+                                    <i class="fas fa-upload me-2"></i><strong>1. Carica un'immagine</strong>
                                 </div>
                                 <div class="card-body">
-                                    Clicca sul pulsante <span class="badge bg-secondary">Carica</span> e seleziona la foto del disegno che vuoi riprodurre.
+                                    Clicca su <span class="badge bg-secondary"><i class="fas fa-upload"></i> Carica</span> e seleziona un file immagine. Le misure già esistenti vengono mantenute — usa <i class="fas fa-trash"></i> per eliminarle se vuoi ripartire da zero.
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-ruler me-2"></i><strong>2. Definisci la Scala di Riferimento</strong>
+                                    <i class="fas fa-drafting-compass me-2"></i><strong>2. Modalità di disegno</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2">Scegli la modalità dalla barra degli strumenti, poi clicca (o tocca) sul canvas per disegnare.</p>
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td style="width:2rem"><i class="fas fa-mouse-pointer"></i></td>
+                                                <td><strong>Selezione</strong> — seleziona e trascina i vertici per riposizionarli</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-minus"></i></td>
+                                                <td><strong>Segmento</strong> — due click per una linea di misura singola</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-wave-square"></i></td>
+                                                <td><strong>Continuativo</strong> — ogni punto finale diventa l'inizio del successivo; ideale per polilinee</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-square"></i></td>
+                                                <td><strong>Rettangolo</strong> — due click su vertici opposti creano 4 segmenti con larghezza e altezza</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-circle"></i></td>
+                                                <td><strong>Cerchio</strong> — primo click sul centro, secondo sul perimetro; misura raggio e diametro</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-ruler me-2"></i><strong>3. Scala di riferimento</strong>
                                 </div>
                                 <div class="card-body">
                                     <ol class="mb-0">
-                                        <li>Disegna un segmento su una dimensione nota nell'immagine (es. un oggetto di cui conosci la misura reale)</li>
-                                        <li>Clicca sul segmento per selezionarlo</li>
-                                        <li>Nelle <strong>Impostazioni</strong>, inserisci la misura reale in millimetri</li>
-                                        <li>Tutte le successive misure saranno calcolate automaticamente in base a questa scala</li>
+                                        <li>Disegna un segmento su una dimensione nota nell'immagine</li>
+                                        <li>Cliccaci sopra per selezionarlo — la lunghezza in pixel si compila automaticamente in <strong>Impostazioni</strong></li>
+                                        <li>Inserisci la misura reale corrispondente in millimetri e clicca <em>Applica rapporto</em></li>
+                                        <li>Tutte le misure si aggiornano in tempo reale</li>
                                     </ol>
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-drafting-compass me-2"></i><strong>3. Modalità di Disegno</strong>
+                                    <i class="fas fa-search me-2"></i><strong>4. Zoom e navigazione</strong>
                                 </div>
                                 <div class="card-body">
-                                    <p><i class="fas fa-minus text-danger me-2"></i><strong>Segmento:</strong> Clicca due volte per creare una linea di misura singola</p>
-                                    <p><i class="fas fa-wave-square text-danger me-2"></i><strong>Continuativo:</strong> Crea segmenti consecutivi - ogni punto finale diventa l'inizio del successivo (ideale per polilinee e percorsi)</p>
-                                    <p><i class="fas fa-square text-danger me-2"></i><strong>Rettangolo:</strong> Clicca due vertici opposti per creare un rettangolo (4 segmenti) - utile per misurare larghezza e altezza simultaneamente</p>
-                                    <p class="mb-0"><i class="fas fa-circle text-danger me-2"></i><strong>Cerchio:</strong> Primo click sul centro, secondo click sul raggio - utile per misurare circonferenze e diametri</p>
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Desktop</strong></td>
+                                                <td>Tasto destro + trascina per spostare &bull; <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> per zoom &bull; <i class="fas fa-expand-arrows-alt"></i> per reset vista &bull; doppio click per reset zoom e annullamento disegno in corso</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Touch / Pennino</strong></td>
+                                                <td>Pinch per zoom &bull; un dito per spostare &bull; doppio tap per reset zoom e annullamento disegno in corso</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-eye me-2"></i><strong>4. Anteprima</strong>
+                                    <i class="fas fa-magnet me-2"></i><strong>5. Aggancio automatico (snap)</strong>
                                 </div>
                                 <div class="card-body">
-                                    Il pulsante <i class="fas fa-eye text-success"></i> attiva/disattiva l'anteprima in tempo reale mentre disegni. Quando attiva, vedrai il segmento o rettangolo prima di confermarlo.
+                                    Quando il cursore o la penna si avvicina a un vertice esistente (entro 20 px schermo), compare un indicatore circolare e il punto si aggancia automaticamente — indipendentemente dal livello di zoom. Funziona sia durante il disegno sia quando si trascinano vertici in modalità Selezione.
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-ruler-combined me-2"></i><strong>5. Visibilità Segmenti</strong>
+                                    <i class="fas fa-save me-2"></i><strong>6. Salvataggio automatico</strong>
                                 </div>
                                 <div class="card-body">
-                                    Il pulsante <i class="fas fa-ruler-combined text-info"></i> mostra/nasconde tutti i segmenti disegnati. Utile per:
-                                    <ul class="mb-0">
-                                        <li>Ottenere una vista pulita dell'immagine originale</li>
-                                        <li>Concentrarsi sul disegno senza distrazioni</li>
-                                        <li>Confrontare misure con l'immagine di base</li>
-                                    </ul>
+                                    Le misure vengono salvate automaticamente nel browser ad ogni modifica. Al prossimo caricamento di una immagine, i segmenti vengono ripristinati. Per cancellare tutto usa <i class="fas fa-trash"></i>.
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-search me-2"></i><strong>6. Zoom e Navigazione</strong>
+                                    <i class="fas fa-sliders-h me-2"></i><strong>7. Controlli aggiuntivi</strong>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Desktop:</strong> Tasto destro + trascina per spostare, bottoni <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> per zoom, doppio click per reset zoom e cancellazione ultimo segmento</p>
-                                    <p class="mb-0"><strong>Touch:</strong> Pinch per zoom, un dito per spostare, doppio tap per reset</p>
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td><i class="fas fa-eye"></i></td>
+                                                <td>Attiva/disattiva l'anteprima in tempo reale durante il disegno</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-ruler-combined"></i></td>
+                                                <td>Mostra/nasconde tutti i segmenti (utile per confrontare con l'immagine originale)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-undo"></i></td>
+                                                <td>Annulla l'ultimo segmento creato (anche <kbd>Ctrl+Z</kbd>)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-times"></i></td>
+                                                <td>Annulla il disegno in corso senza creare il segmento (anche <kbd>ESC</kbd>)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-moon"></i></td>
+                                                <td>Cambia tema ciclicamente: Scuro → Chiaro → Alto Contrasto</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <i class="fas fa-magnet me-2"></i><strong>7. Aggancio Automatico (Snap)</strong>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-2">Quando clicchi vicino a un punto esistente (entro 20px), il nuovo punto si aggancia automaticamente all'endpoint per massima precisione.</p>
-                                    <p class="mb-2"><strong>Indicatore visivo:</strong> Un cerchio colorato appare quando il cursore è vicino a un punto agganciabile</p>
-                                    <p class="mb-2"><strong>Snap durante modifica:</strong> Quando trascini un vertice esistente vicino a un altro punto, si aggancia automaticamente, permettendo di collegare segmenti separati</p>
-                                    <p class="mb-0"><strong>Utile per:</strong> Chiudere forme, creare percorsi continui precisi, connettere misure multiple</p>
-                                </div>
-                            </div>
-
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <i class="fas fa-keyboard me-2"></i><strong>8. Scorciatoie e Controlli</strong>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-2"><kbd>ESC</kbd> o <i class="fas fa-times text-warning"></i> - Annulla il disegno corrente (utile in modalità continuativa per terminare la catena)</p>
-                                    <p class="mb-0"><strong>Clic su primo punto:</strong> Deseleziona i segmenti per pulire la vista dalle etichette</p>
-                                </div>
-                            </div>
-
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <i class="fas fa-palette me-2"></i><strong>9. Temi</strong>
-                                </div>
-                                <div class="card-body">
-                                    Scegli tra 3 temi per migliorare la visibilità:
-                                    <ul class="mb-0">
-                                        <li><i class="fas fa-sun text-warning me-2"></i><strong>Chiaro</strong> - Ideale per ambienti luminosi</li>
-                                        <li><i class="fas fa-moon text-info me-2"></i><strong>Scuro</strong> - Riduce l'affaticamento visivo</li>
-                                        <li><i class="fas fa-adjust me-2"></i><strong>Alto Contrasto</strong> - Massima accessibilità</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </section>
-
                         </section>
                     </div>
 
                     <!-- Contenuto Inglese -->
                     <div id="help-content-en" class="help-content d-none">
-                        <!-- User Manual -->
                         <section class="mb-4">
                             <h5 class="text-primary mb-3">
                                 <i class="fas fa-book me-2"></i>User Manual
                             </h5>
                             <p class="lead">
-                                <strong>ImgMeasure</strong> is a tool for measuring distances on images, ideal for copying paper drawings from a photograph or scan.
+                                <strong>ImgMeasure</strong> is a browser-based tool for measuring distances on images — no installation required. Ideal for extracting dimensions from photos, scans and technical drawings.
                             </p>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-upload me-2"></i><strong>1. Load an Image</strong>
+                                    <i class="fas fa-upload me-2"></i><strong>1. Load an image</strong>
                                 </div>
                                 <div class="card-body">
-                                    Click the <span class="badge bg-secondary">Upload</span> button and select the photo of the drawing you want to reproduce.
+                                    Click <span class="badge bg-secondary"><i class="fas fa-upload"></i> Upload</span> and select an image file. Existing measurements are kept — use <i class="fas fa-trash"></i> to delete them if you want to start over.
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-ruler me-2"></i><strong>2. Define the Reference Scale</strong>
+                                    <i class="fas fa-drafting-compass me-2"></i><strong>2. Drawing modes</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2">Select a mode from the toolbar, then click (or tap) on the canvas to draw.</p>
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td style="width:2rem"><i class="fas fa-mouse-pointer"></i></td>
+                                                <td><strong>Select</strong> — select and drag vertices to reposition them</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-minus"></i></td>
+                                                <td><strong>Segment</strong> — two clicks to create a single measurement line</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-wave-square"></i></td>
+                                                <td><strong>Continuous</strong> — each end point becomes the start of the next; ideal for polylines</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-square"></i></td>
+                                                <td><strong>Rectangle</strong> — two clicks on opposite corners create 4 segments with width and height</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-circle"></i></td>
+                                                <td><strong>Circle</strong> — first click on center, second on perimeter; measures radius and diameter</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <i class="fas fa-ruler me-2"></i><strong>3. Reference scale</strong>
                                 </div>
                                 <div class="card-body">
                                     <ol class="mb-0">
-                                        <li>Draw a segment on a known dimension in the image (e.g., an object whose real measurement you know)</li>
-                                        <li>Click on the segment to select it</li>
-                                        <li>In <strong>Settings</strong>, enter the real measurement in millimeters</li>
-                                        <li>All subsequent measurements will be calculated automatically based on this scale</li>
+                                        <li>Draw a segment over a known dimension in the image</li>
+                                        <li>Click it to select it — its pixel length fills automatically in <strong>Settings</strong></li>
+                                        <li>Enter the corresponding real-world measurement in millimeters and click <em>Apply ratio</em></li>
+                                        <li>All measurements update in real time</li>
                                     </ol>
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-drafting-compass me-2"></i><strong>3. Drawing Modes</strong>
+                                    <i class="fas fa-search me-2"></i><strong>4. Zoom and navigation</strong>
                                 </div>
                                 <div class="card-body">
-                                    <p><i class="fas fa-minus text-danger me-2"></i><strong>Segment:</strong> Click twice to create a single measurement line</p>
-                                    <p><i class="fas fa-wave-square text-danger me-2"></i><strong>Continuous:</strong> Create consecutive segments - each end point becomes the start of the next (ideal for polylines and paths)</p>
-                                    <p><i class="fas fa-square text-danger me-2"></i><strong>Rectangle:</strong> Click two opposite vertices to create a rectangle (4 segments) - useful for measuring width and height simultaneously</p>
-                                    <p class="mb-0"><i class="fas fa-circle text-danger me-2"></i><strong>Circle:</strong> First click on center, second click on radius - useful for measuring circumferences and diameters</p>
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Desktop</strong></td>
+                                                <td>Right-click + drag to pan &bull; <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> to zoom &bull; <i class="fas fa-expand-arrows-alt"></i> to reset view &bull; double-click to reset zoom and cancel current drawing</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Touch / Stylus</strong></td>
+                                                <td>Pinch to zoom &bull; one finger to pan &bull; double tap to reset zoom and cancel current drawing</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-eye me-2"></i><strong>4. Preview</strong>
+                                    <i class="fas fa-magnet me-2"></i><strong>5. Automatic snapping</strong>
                                 </div>
                                 <div class="card-body">
-                                    The <i class="fas fa-eye text-success"></i> button enables/disables real-time preview while drawing. When active, you'll see the segment or rectangle before confirming it.
+                                    When the cursor or stylus approaches an existing vertex (within 20 screen pixels), a circular indicator appears and the point snaps automatically — regardless of zoom level. Works both during drawing and when dragging vertices in Select mode.
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-ruler-combined me-2"></i><strong>5. Segment Visibility</strong>
+                                    <i class="fas fa-save me-2"></i><strong>6. Auto-save</strong>
                                 </div>
                                 <div class="card-body">
-                                    The <i class="fas fa-ruler-combined text-info"></i> button shows/hides all drawn segments. Useful for:
-                                    <ul class="mb-0">
-                                        <li>Getting a clean view of the original image</li>
-                                        <li>Focusing on drawing without distractions</li>
-                                        <li>Comparing measurements with the base image</li>
-                                    </ul>
+                                    Measurements are saved automatically in the browser after every change. The next time you load an image, segments are restored. Use <i class="fas fa-trash"></i> to clear everything.
                                 </div>
                             </div>
 
                             <div class="card mb-3">
                                 <div class="card-header">
-                                    <i class="fas fa-search me-2"></i><strong>6. Zoom and Navigation</strong>
+                                    <i class="fas fa-sliders-h me-2"></i><strong>7. Additional controls</strong>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Desktop:</strong> Right-click + drag to move, <i class="fas fa-search-plus"></i>/<i class="fas fa-search-minus"></i> buttons for zoom, double click to reset zoom and delete last segment</p>
-                                    <p class="mb-0"><strong>Touch:</strong> Pinch for zoom, one finger to move, double tap to reset</p>
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td><i class="fas fa-eye"></i></td>
+                                                <td>Enable/disable real-time preview while drawing</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-ruler-combined"></i></td>
+                                                <td>Show/hide all segments (useful to compare against the original image)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-undo"></i></td>
+                                                <td>Undo the last created segment (also <kbd>Ctrl+Z</kbd>)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-times"></i></td>
+                                                <td>Cancel the current drawing without creating a segment (also <kbd>ESC</kbd>)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-moon"></i></td>
+                                                <td>Cycle theme: Dark → Light → High Contrast</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <i class="fas fa-magnet me-2"></i><strong>7. Automatic Snapping</strong>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-2">When you click near an existing point (within 20px), the new point automatically snaps to the endpoint for maximum precision.</p>
-                                    <p class="mb-2"><strong>Visual indicator:</strong> A colored circle appears when the cursor is near a snappable point</p>
-                                    <p class="mb-2"><strong>Snap during editing:</strong> When you drag an existing vertex near another point, it snaps automatically, allowing you to connect separate segments</p>
-                                    <p class="mb-0"><strong>Useful for:</strong> Closing shapes, creating precise continuous paths, connecting multiple measurements</p>
-                                </div>
-                            </div>
-
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <i class="fas fa-keyboard me-2"></i><strong>8. Shortcuts and Controls</strong>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-2"><kbd>ESC</kbd> or <i class="fas fa-times text-warning"></i> - Cancel current drawing (useful in continuous mode to end the chain)</p>
-                                    <p class="mb-0"><strong>Click on first point:</strong> Deselect segments to clear labels from view</p>
-                                </div>
-                            </div>
-
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <i class="fas fa-palette me-2"></i><strong>9. Themes</strong>
-                                </div>
-                                <div class="card-body">
-                                    Choose from 3 themes to improve visibility:
-                                    <ul class="mb-0">
-                                        <li><i class="fas fa-sun text-warning me-2"></i><strong>Light</strong> - Ideal for bright environments</li>
-                                        <li><i class="fas fa-moon text-info me-2"></i><strong>Dark</strong> - Reduces eye strain</li>
-                                        <li><i class="fas fa-adjust me-2"></i><strong>High Contrast</strong> - Maximum accessibility</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </section>
-
                         </section>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="help-close-btn">Chiudi</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="help-close-btn">
+                        <span id="help-close-label-it">Chiudi</span><span id="help-close-label-en" class="d-none">Close</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -639,12 +671,9 @@
                                 <p class="card-text small text-muted mb-3">
                                     Anche un piccolo contributo fa la differenza!
                                 </p>
-                                <a href="https://www.paypal.com/donate" target="_blank" class="btn btn-primary">
+                                <a href="https://paypal.me/miyamotodan" target="_blank" class="btn btn-primary">
                                     <i class="fab fa-paypal me-2"></i>Dona Ora
                                 </a>
-                                <p class="small text-muted mt-2 mb-0">
-                                    oppure invia a: <strong>donate@imgmeasure.app</strong>
-                                </p>
                             </div>
                         </div>
 
@@ -680,12 +709,9 @@
                                 <p class="card-text small text-muted mb-3">
                                     Even a small contribution makes a difference!
                                 </p>
-                                <a href="https://www.paypal.com/donate" target="_blank" class="btn btn-primary">
+                                <a href="https://paypal.me/miyamotodan" target="_blank" class="btn btn-primary">
                                     <i class="fab fa-paypal me-2"></i>Donate Now
                                 </a>
-                                <p class="small text-muted mt-2 mb-0">
-                                    or send to: <strong>donate@imgmeasure.app</strong>
-                                </p>
                             </div>
                         </div>
 
