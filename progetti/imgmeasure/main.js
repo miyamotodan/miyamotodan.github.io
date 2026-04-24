@@ -252,9 +252,6 @@ function drawSegment(segment) {
     ctx.lineTo(endX, endY);
     ctx.stroke();
 
-    // Punti di controllo
-    drawControlPoint(startX, startY, segment === selectedSegment);
-    drawControlPoint(endX, endY, segment === selectedSegment);
 
     // Etichetta con la misura
     if (segment === selectedSegment) {
@@ -453,9 +450,6 @@ function drawCircle(circle) {
         ctx.stroke();
     }
 
-    // Punti di controllo
-    drawControlPoint(centerX, centerY, circle === selectedSegment);
-    drawControlPoint(radiusPointX, radiusPointY, circle === selectedSegment);
 
     // Etichetta con le misure
     if (circle === selectedSegment) {
