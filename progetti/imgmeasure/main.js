@@ -253,8 +253,10 @@ function drawSegment(segment) {
     ctx.stroke();
 
 
-    // Etichetta con la misura
+    // Punti di controllo e etichetta: solo se selezionato
     if (segment === selectedSegment) {
+        drawControlPoint(startX, startY, true);
+        drawControlPoint(endX, endY, true);
         drawMeasurementLabel(segment, startX, startY, endX, endY);
     }
 }
@@ -451,8 +453,10 @@ function drawCircle(circle) {
     }
 
 
-    // Etichetta con le misure
+    // Punti di controllo e etichetta: solo se selezionato
     if (circle === selectedSegment) {
+        drawControlPoint(centerX, centerY, true);
+        drawControlPoint(radiusPointX, radiusPointY, true);
         drawCircleMeasurementLabel(circle, centerX, centerY, radiusPointX, radiusPointY);
     }
 }
