@@ -52,6 +52,25 @@ let showSegments = true; // Flag per mostrare/nascondere i segmenti
 // Theme
 let currentTheme = 'dark'; // 'light', 'dark', 'contrast'
 
+// DPI
+let dpr = window.devicePixelRatio || 1;
+
+// Grid
+let gridEnabled = false;
+let gridType = 'thirds';
+let gridCustomCols = 4;
+let gridCustomRows = 4;
+let gridOpacity = 0.4;
+let gridColor = '#ffffff';
+
+// RAF throttle
+let rafPending = false;
+function scheduleRedraw() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => { drawCanvas(); rafPending = false; });
+}
+
 // Feedback system
 let feedbackShown = false; // Flag per tracciare se il modal è già stato mostrato in questa sessione
 const FEEDBACK_TRIGGER_COUNT = 3; // Numero di segmenti dopo cui mostrare il modal
@@ -74,8 +93,9 @@ function loadImage(event) {
     const file = event.target.files[0];
     if (!file) return;
     
+    if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
     img.src = URL.createObjectURL(file);
-    
+
     img.onload = function() {
         resizeCanvas();
         points = [];
@@ -117,6 +137,7 @@ function resizeCanvas() {
     }
     
     // Imposta sempre le dimensioni del canvas al massimo disponibile
+    dpr = 1; // DPR fisso a 1 per evitare distorsioni delle proporzioni con max-width/max-height CSS
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     
@@ -159,6 +180,9 @@ function drawCanvas() {
     if (img.width && img.height) {
         ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
     }
+
+    // Disegna griglia di riferimento (sopra l'immagine, sotto i segmenti)
+    drawGrid();
 
     // Disegna tutti i segmenti solo se showSegments è true
     if (showSegments) {
@@ -844,7 +868,7 @@ function handlePointerMove(event) {
             const snapPoint = findNearestEndpoint(coords.x, coords.y);
             snapPreviewPoint = snapPoint;
 
-            drawCanvas();
+            scheduleRedraw();
         }
     }
 }
@@ -890,7 +914,7 @@ function handleMouseMove(event) {
 
             updateMeasurement();
             updateSegmentsList();
-            drawCanvas();
+            scheduleRedraw();
         }
     } else if (isMousePanning) {
         event.preventDefault();
@@ -905,7 +929,7 @@ function handleMouseMove(event) {
 
         mouseStartX = event.clientX;
         mouseStartY = event.clientY;
-        drawCanvas();
+        scheduleRedraw();
     } else if (showPreview && points.length === 1) {
         // Aggiorna l'anteprima (segmento o rettangolo)
         const coords = getCanvasCoordinates(event.clientX, event.clientY);
@@ -915,7 +939,7 @@ function handleMouseMove(event) {
         const snapPoint = findNearestEndpoint(coords.x, coords.y);
         snapPreviewPoint = snapPoint;
 
-        drawCanvas();
+        scheduleRedraw();
     } else if (drawingMode === 'select') {
         // In modalità selezione, mostra cursore appropriato quando si passa su un punto
         const coords = getCanvasCoordinates(event.clientX, event.clientY);
@@ -933,7 +957,7 @@ function handleMouseMove(event) {
 
         if (snapPoint !== snapPreviewPoint) {
             snapPreviewPoint = snapPoint;
-            drawCanvas();
+            scheduleRedraw();
         }
     }
 }
@@ -1081,7 +1105,7 @@ function handleTouchMove(event) {
 
             updateMeasurement();
             updateSegmentsList();
-            drawCanvas();
+            scheduleRedraw();
             return; // Non fare pan durante il drag
         }
 
@@ -1102,7 +1126,7 @@ function handleTouchMove(event) {
 
             panStartX = touch.clientX;
             panStartY = touch.clientY;
-            drawCanvas();
+            scheduleRedraw();
         } else if (showPreview && points.length === 1 && !isPanning) {
             // Aggiorna l'anteprima (segmento o rettangolo) durante il movimento
             const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
@@ -1112,7 +1136,7 @@ function handleTouchMove(event) {
             const snapPoint = findNearestEndpoint(coords.x, coords.y);
             snapPreviewPoint = snapPoint;
 
-            drawCanvas();
+            scheduleRedraw();
         }
     } else if (event.touches.length === 2) {
         // Pinch to zoom
@@ -1120,7 +1144,7 @@ function handleTouchMove(event) {
         const scale = distance / initialDistance;
         zoomFactor = Math.max(0.5, Math.min(5, initialZoom * scale));
         adjustPanForZoom(zoomFactor);
-        drawCanvas();
+        scheduleRedraw();
     }
 }
 
@@ -1240,9 +1264,7 @@ function getCanvasCoordinates(clientX, clientY) {
     const canvasX = rawCanvasX * scaleX;
     const canvasY = rawCanvasY * scaleY;
     
-    // 2. Converti in coordinate del sistema logico
-    // Il sistema logico è il sistema di coordinate prima di ctx.scale()
-    // Quindi dividiamo per zoomFactor per "annullare" il scale che verrà applicato
+    // 2. Converti in coordinate del sistema logico (annulla zoomFactor)
     const logicalX = canvasX / zoomFactor;
     const logicalY = canvasY / zoomFactor;
     
@@ -1420,6 +1442,50 @@ function createSegment() {
     }
 }
 
+function drawGrid() {
+    if (!gridEnabled || !img.complete || !img.width || !img.height) return;
+
+    const iw = img.width * scaleFactor;
+    const ih = img.height * scaleFactor;
+    const shorter = Math.min(iw, ih);
+
+    // Il passo è sempre uguale su entrambi gli assi → celle sempre quadrate
+    let step;
+    if (gridType === 'thirds') {
+        step = shorter / 3;
+    } else if (gridType === 'golden') {
+        step = shorter / 5;
+    } else if (gridType === 'square') {
+        step = shorter / 8;
+    } else {
+        step = shorter / Math.max(1, gridCustomCols);
+    }
+
+    if (step <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = gridOpacity;
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1 / zoomFactor;
+    ctx.setLineDash([4 / zoomFactor, 4 / zoomFactor]);
+
+    for (let x = imgX + step; x < imgX + iw - 0.5; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, imgY);
+        ctx.lineTo(x, imgY + ih);
+        ctx.stroke();
+    }
+    for (let y = imgY + step; y < imgY + ih - 0.5; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(imgX, y);
+        ctx.lineTo(imgX + iw, y);
+        ctx.stroke();
+    }
+
+    ctx.setLineDash([]);
+    ctx.restore();
+}
+
 function getPixelDistance(point1, point2) {
     const dx = point2.x - point1.x;
     const dy = point2.y - point1.y;
@@ -1486,6 +1552,23 @@ function calculateDistance(point1, point2) {
     // Formula corretta: pixelDistance * (realMm / referencePx)
     const realDistance = pixelDistance * (realMm / referencePx);
     return realDistance.toFixed(2);
+}
+
+function getSegmentAngleDeg(segment) {
+    if (!segment || segment.type === 'circle') return null;
+    const dx = segment.end.x - segment.start.x;
+    const dy = segment.end.y - segment.start.y;
+    let deg = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (deg < 0) deg += 360;
+    return deg;
+}
+
+function getAngleBetweenSegments(seg1, seg2) {
+    const a1 = getSegmentAngleDeg(seg1);
+    const a2 = getSegmentAngleDeg(seg2);
+    if (a1 === null || a2 === null) return null;
+    let diff = Math.abs(a1 - a2) % 360;
+    return diff > 180 ? 360 - diff : diff;
 }
 
 function selectSegment(x, y) {
@@ -1626,7 +1709,9 @@ function updateMeasurement() {
             // Per i segmenti: mostra distanza
             pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
             realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
-            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm`;
+            const angleDeg = getSegmentAngleDeg(selectedSegment);
+            const angleStr = angleDeg !== null ? ` | ${angleDeg.toFixed(1)}°` : '';
+            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm${angleStr}`;
         }
 
         const pixelSelElement = document.getElementById('pixelsel');
@@ -1686,6 +1771,15 @@ function setAsReference() {
     drawCanvas();
 }
 
+function selectSegmentById(id) {
+    const seg = segments.find(s => s.id === id);
+    if (!seg) return;
+    selectedSegment = seg;
+    updateMeasurement();
+    updateSegmentsList();
+    drawCanvas();
+}
+
 function updateSegmentsList() {
     // Aggiorna status bar
     if (segmentsStatus) {
@@ -1694,14 +1788,14 @@ function updateSegmentsList() {
     if (segmentsCount) {
         segmentsCount.textContent = segments.length;
     }
-    
+
     if (!segmentsList) return;
-    
+
     if (segments.length === 0) {
         segmentsList.innerHTML = '<div class="list-group-item text-muted text-center">Nessun segmento creato</div>';
         return;
     }
-    
+
     segmentsList.innerHTML = '';
 
     segments.forEach((segment, index) => {
@@ -1715,17 +1809,16 @@ function updateSegmentsList() {
 function createSegmentListItem(segment, index) {
     const item = document.createElement('div');
     item.className = `list-group-item d-flex justify-content-between align-items-center ${segment === selectedSegment ? 'active' : ''}`;
+    item.dataset.id = segment.id;
 
     let pixelDistance, realDistance, measurementText;
 
     if (segment.type === 'circle') {
-        // Per i cerchi: mostra raggio e diametro
         pixelDistance = getPixelDistance(segment.center, segment.radiusPoint);
         realDistance = calculateDistance(segment.center, segment.radiusPoint);
         const diameterReal = (parseFloat(realDistance) * 2).toFixed(2);
         measurementText = `r: ${realDistance}mm | ø: ${diameterReal}mm`;
     } else {
-        // Per i segmenti: mostra distanza
         pixelDistance = getPixelDistance(segment.start, segment.end);
         realDistance = calculateDistance(segment.start, segment.end);
         measurementText = `${pixelDistance.toFixed(1)}px → ${realDistance}mm`;
@@ -1733,50 +1826,18 @@ function createSegmentListItem(segment, index) {
 
     item.innerHTML = `
         <div class="flex-grow-1">
-            <div class="fw-bold segment-name" contenteditable="true" style="font-size: 0.9rem;">${segment.name}</div>
+            <div class="fw-bold segment-name" contenteditable="true" style="font-size: 0.9rem;" data-seg-id="${segment.id}">${segment.name}</div>
             <div class="text-muted" style="font-size: 0.8rem;">${measurementText}</div>
         </div>
         <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary select-btn" title="Seleziona">
+            <button class="btn btn-outline-primary" data-action="select" data-id="${segment.id}" title="Seleziona">
                 <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-outline-danger delete-btn" title="Elimina">
+            <button class="btn btn-outline-danger" data-action="delete" data-id="${segment.id}" title="Elimina">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
     `;
-
-    // Event listeners
-    const nameElement = item.querySelector('.segment-name');
-    const selectBtn = item.querySelector('.select-btn');
-    const deleteBtn = item.querySelector('.delete-btn');
-
-    nameElement.addEventListener('blur', () => {
-        segment.name = nameElement.textContent.trim() || (segment.type === 'circle' ? `Cerchio ${index + 1}` : `Segmento ${index + 1}`);
-        nameElement.textContent = segment.name;
-        updateMeasurement(); // Aggiorna la status bar
-    });
-
-    selectBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedSegment = segment;
-        updateMeasurement();
-        updateSegmentsList();
-        drawCanvas();
-        showToast(`Selezionato: ${segment.name}`, 'info');
-    });
-
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteSegment(segment);
-    });
-
-    item.addEventListener('click', () => {
-        selectedSegment = segment;
-        updateMeasurement();
-        updateSegmentsList();
-        drawCanvas();
-    });
 
     return item;
 }
@@ -2124,6 +2185,48 @@ function openFeedbackManually() {
     feedbackModal.show();
 }
 
+// === EXPORT ===
+
+function exportMeasurementsCSV() {
+    if (segments.length === 0) {
+        showToast('Nessuna misura da esportare', 'warning');
+        return;
+    }
+    const rows = [['ID', 'Nome', 'Pixel', 'Misura (mm)', 'Angolo (°)']];
+    segments.forEach(seg => {
+        let px, real, angle;
+        if (seg.type === 'circle') {
+            px = getPixelDistance(seg.center, seg.radiusPoint).toFixed(2);
+            real = calculateDistance(seg.center, seg.radiusPoint);
+            angle = '';
+        } else {
+            px = getPixelDistance(seg.start, seg.end).toFixed(2);
+            real = calculateDistance(seg.start, seg.end);
+            const deg = getSegmentAngleDeg(seg);
+            angle = deg !== null ? deg.toFixed(1) : '';
+        }
+        rows.push([seg.id, `"${seg.name}"`, px, real, angle]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'misurazioni.csv';
+    a.click();
+    showToast('CSV esportato', 'success');
+}
+
+function exportImageWithOverlay() {
+    if (!img.complete || !img.width) {
+        showToast('Nessuna immagine caricata', 'warning');
+        return;
+    }
+    const link = document.createElement('a');
+    link.download = 'misurazioni.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Immagine esportata', 'success');
+}
+
 // Funzione rimossa - ora usiamo Bootstrap Offcanvas
 
 // === EVENT LISTENERS ===
@@ -2311,6 +2414,40 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // Event delegation per la lista segmenti (sostituisce i listener individuali)
+    if (segmentsList) {
+        segmentsList.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (btn) {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                if (btn.dataset.action === 'select') {
+                    selectSegmentById(id);
+                    showToast(`Selezionato: ${segments.find(s => s.id === id)?.name || ''}`, 'info');
+                } else if (btn.dataset.action === 'delete') {
+                    deleteSegment(segments.find(s => s.id === id));
+                }
+                return;
+            }
+            const item = e.target.closest('.list-group-item[data-id]');
+            if (item) {
+                selectSegmentById(parseInt(item.dataset.id));
+            }
+        });
+
+        segmentsList.addEventListener('focusout', (e) => {
+            const nameEl = e.target.closest('.segment-name[data-seg-id]');
+            if (!nameEl) return;
+            const id = parseInt(nameEl.dataset.segId);
+            const seg = segments.find(s => s.id === id);
+            if (!seg) return;
+            const idx = segments.indexOf(seg);
+            seg.name = nameEl.textContent.trim() || (seg.type === 'circle' ? `Cerchio ${idx + 1}` : `Segmento ${idx + 1}`);
+            nameEl.textContent = seg.name;
+            updateMeasurement();
+        });
+    }
+
     // Scale inputs
     const scaleElement = document.getElementById('scale');
     const realElement = document.getElementById('real');
@@ -2352,6 +2489,29 @@ document.addEventListener("DOMContentLoaded", function() {
     if (centerElement) centerElement.addEventListener('click', resetView);
     
     
+    // Zoom con rotella del mouse, centrato sul cursore
+    canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const delta = event.deltaY < 0 ? 0.2 : -0.2;
+        const newZoom = Math.max(0.5, Math.min(5, zoomFactor + delta));
+        if (newZoom === zoomFactor) return;
+
+        // Mantieni fisso il punto sotto il cursore:
+        // imgX_new = cssX * (1/newZoom - 1/zoomFactor) + imgX
+        const rect = canvas.getBoundingClientRect();
+        const cssX = event.clientX - rect.left;
+        const cssY = event.clientY - rect.top;
+        const factor = 1 / newZoom - 1 / zoomFactor;
+        imgX = cssX * factor + imgX;
+        imgY = cssY * factor + imgY;
+        panX = imgX - centerX;
+        panY = imgY - centerY;
+
+        zoomFactor = newZoom;
+        scheduleRedraw();
+        updateZoomLevel();
+    }, { passive: false });
+
     // Resize canvas on window resize
     window.addEventListener('resize', () => {
         resizeCanvas();
@@ -2507,6 +2667,55 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+
+    // Griglia di riferimento
+    const gridToggle = document.getElementById('grid-toggle');
+    const gridTypeEl = document.getElementById('grid-type');
+    const gridCustomInputs = document.getElementById('grid-custom-inputs');
+    const gridColsEl = document.getElementById('grid-cols');
+    const gridRowsEl = document.getElementById('grid-rows');
+    const gridOpacityEl = document.getElementById('grid-opacity');
+    const gridColorEl = document.getElementById('grid-color');
+
+    if (gridToggle) {
+        gridToggle.addEventListener('change', e => { gridEnabled = e.target.checked; drawCanvas(); });
+    }
+    if (gridTypeEl) {
+        gridTypeEl.addEventListener('change', e => {
+            gridType = e.target.value;
+            if (gridCustomInputs) gridCustomInputs.classList.toggle('d-none', gridType !== 'custom');
+            drawCanvas();
+        });
+    }
+    if (gridColsEl) gridColsEl.addEventListener('input', e => { gridCustomCols = parseInt(e.target.value) || 4; drawCanvas(); });
+    if (gridOpacityEl) gridOpacityEl.addEventListener('input', e => { gridOpacity = parseFloat(e.target.value); drawCanvas(); });
+    if (gridColorEl) gridColorEl.addEventListener('input', e => { gridColor = e.target.value; drawCanvas(); });
+
+    // Export
+    const exportCsvBtn = document.getElementById('export-csv');
+    const exportImgBtn = document.getElementById('export-img');
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportMeasurementsCSV);
+    if (exportImgBtn) exportImgBtn.addEventListener('click', exportImageWithOverlay);
+
+    // Drag & Drop
+    const canvasContainer = document.querySelector('.canvas-container');
+    document.body.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (canvasContainer) canvasContainer.classList.add('drag-over');
+    });
+    document.body.addEventListener('dragleave', e => {
+        if (!e.relatedTarget || !document.body.contains(e.relatedTarget)) {
+            if (canvasContainer) canvasContainer.classList.remove('drag-over');
+        }
+    });
+    document.body.addEventListener('drop', e => {
+        e.preventDefault();
+        if (canvasContainer) canvasContainer.classList.remove('drag-over');
+        const file = e.dataTransfer?.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            loadImage({ target: { files: [file] } });
+        }
+    });
 
     // Initialize
     resizeCanvas();
