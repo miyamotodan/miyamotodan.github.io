@@ -1284,9 +1284,20 @@ function getCanvasCoordinates(clientX, clientY) {
     const canvasY = rawCanvasY * scaleY;
     
     // 2. Converti in coordinate del sistema logico (annulla zoomFactor)
-    const logicalX = canvasX / zoomFactor;
-    const logicalY = canvasY / zoomFactor;
-    
+    let logicalX = canvasX / zoomFactor;
+    let logicalY = canvasY / zoomFactor;
+
+    // 2b. Applica la rotazione inversa per ricondurre il click allo spazio ruotato dell'immagine
+    if (imageRotation !== 0 && img.width && img.height) {
+        const cx = imgX + (img.width * scaleFactor) / 2;
+        const cy = imgY + (img.height * scaleFactor) / 2;
+        const rad = -imageRotation * Math.PI / 180;
+        const dx = logicalX - cx;
+        const dy = logicalY - cy;
+        logicalX = cx + dx * Math.cos(rad) - dy * Math.sin(rad);
+        logicalY = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+    }
+
     // 3. Rimuovi l'offset dell'immagine per ottenere coordinate relative all'immagine
     const relativeX = logicalX - imgX;
     const relativeY = logicalY - imgY;
