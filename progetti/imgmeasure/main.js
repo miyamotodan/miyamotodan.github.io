@@ -74,6 +74,93 @@ function scheduleRedraw() {
     requestAnimationFrame(() => { drawCanvas(); rafPending = false; });
 }
 
+// === UNDO / REDO ===
+// Strategia "save after": saveState() si chiama DOPO ogni operazione.
+// history[0] = stato iniziale (da loadImage), history[N] = dopo N operazioni.
+// undo: index--, restore history[index]
+// redo: index++, restore history[index]
+const MAX_HISTORY = 60;
+let history = [];
+let historyIndex = -1;
+
+// Timer per debounce zoom-rotella e rotazione-slider (operazioni continue)
+let _debounceSaveTimer = null;
+
+function captureState() {
+    return {
+        segments: JSON.parse(JSON.stringify(segments)),
+        selectedId: selectedSegment ? selectedSegment.id : null,
+        imageRotation,
+        zoomFactor,
+        panX,
+        panY
+    };
+}
+
+// Salva lo stato corrente (dopo l'operazione). Annulla eventuali debounce pendenti.
+function saveState() {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = null;
+    history = history.slice(0, historyIndex + 1);
+    history.push(captureState());
+    if (history.length > MAX_HISTORY) history.shift();
+    else historyIndex++;
+    updateUndoRedoButtons();
+}
+
+// Versione debounced per operazioni continue (wheel, slider rotazione).
+// Salva l'ultimo stato dopo ms millisecondi di inattività.
+function saveStateDebounced(ms) {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = setTimeout(() => saveState(), ms);
+}
+
+function restoreState(snapshot) {
+    segments = JSON.parse(JSON.stringify(snapshot.segments));
+    imageRotation = snapshot.imageRotation;
+    zoomFactor = snapshot.zoomFactor;
+    panX = snapshot.panX;
+    panY = snapshot.panY;
+    imgX = centerX + panX;
+    imgY = centerY + panY;
+    selectedSegment = snapshot.selectedId !== null
+        ? segments.find(s => s.id === snapshot.selectedId) || null
+        : null;
+    const rotSlider = document.getElementById('rotation-slider');
+    const rotInput = document.getElementById('rotation-input');
+    if (rotSlider) rotSlider.value = imageRotation;
+    if (rotInput) rotInput.value = imageRotation;
+    updateZoomLevel();
+    updateSegmentsList();
+    updateMeasurement();
+    drawCanvas();
+}
+
+function undo() {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = null;
+    if (historyIndex <= 0) return;
+    historyIndex--;
+    restoreState(history[historyIndex]);
+    updateUndoRedoButtons();
+}
+
+function redo() {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = null;
+    if (historyIndex >= history.length - 1) return;
+    historyIndex++;
+    restoreState(history[historyIndex]);
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    if (undoBtn) undoBtn.disabled = historyIndex <= 0;
+    if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
+}
+
 // Feedback system
 let feedbackShown = false; // Flag per tracciare se il modal è già stato mostrato in questa sessione
 const FEEDBACK_TRIGGER_COUNT = 3; // Numero di segmenti dopo cui mostrare il modal
@@ -118,6 +205,11 @@ function loadImage(event) {
 
         drawCanvas();
         updateSegmentsList();
+        // Resetta history e salva stato iniziale
+        history = [];
+        historyIndex = -1;
+        saveState();
+        updateUndoRedoButtons();
         const hint = segments.length > 0 && wasEmpty ? ` (${segments.length} segmenti ripristinati)` : '';
         showToast(`Immagine caricata con successo${hint}`, 'success');
     };
@@ -556,6 +648,24 @@ function drawSnapIndicator(point) {
     ctx.fill();
 }
 
+function drawHorizontalLabel(labelX, labelY, text, bg, textColor) {
+    const t = ctx.getTransform();
+    const sx = t.a * labelX + t.c * labelY + t.e;
+    const sy = t.b * labelX + t.d * labelY + t.f;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.font = `bold ${LABEL_FONT_SIZE}px Arial`;
+    const textWidth = ctx.measureText(text).width;
+    const padding = 6;
+    const boxHeight = 20;
+    ctx.fillStyle = bg;
+    ctx.fillRect(sx - textWidth / 2 - padding, sy - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, sx, sy - 2);
+    ctx.restore();
+}
+
 function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--label-bg').trim();
     const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
@@ -565,78 +675,42 @@ function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
 
-    // Calcola la posizione dell'etichetta spostata dalla linea - offset fisso
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
-    const fixedOffset = 20 / zoomFactor; // Offset fisso
+    const fixedOffset = 20 / zoomFactor;
     const offsetX = (-dy / length) * fixedOffset;
     const offsetY = (dx / length) * fixedOffset;
 
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
-    // Font size fisso compensato per zoom
-    const fontSize = LABEL_FONT_SIZE / zoomFactor;
-    ctx.font = `bold ${fontSize}px Arial`;
-
-    // Sfondo dell'etichetta
-    ctx.fillStyle = labelBg;
-    const text = `${realDistance} mm`;
-    const textWidth = ctx.measureText(text).width;
-    const padding = 6 / zoomFactor;
-    const boxHeight = 20 / zoomFactor;
-
-    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
-
-    // Testo
-    ctx.fillStyle = labelText;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+    drawHorizontalLabel(labelX, labelY, `${realDistance} mm`, labelBg, labelText);
 }
 
 function drawPreviewMeasurementLabel(point1, point2, startX, startY, endX, endY) {
     const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
     const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
 
-    // Calcola la distanza in tempo reale
     const realDistance = calculateDistance(point1, point2);
 
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
 
-    // Calcola la posizione dell'etichetta spostata dalla linea - offset fisso
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    // Evita divisione per zero se i punti sono troppo vicini
     if (length < 1) return;
 
-    const fixedOffset = 20 / zoomFactor; // Offset fisso
+    const fixedOffset = 20 / zoomFactor;
     const offsetX = (-dy / length) * fixedOffset;
     const offsetY = (dx / length) * fixedOffset;
 
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
-    // Font size fisso compensato per zoom
-    const fontSize = LABEL_FONT_SIZE / zoomFactor;
-    ctx.font = `bold ${fontSize}px Arial`;
-
-    // Sfondo dell'etichetta con opacità maggiore per l'anteprima
-    ctx.fillStyle = labelBg;
-    const text = `${realDistance} mm`;
-    const textWidth = ctx.measureText(text).width;
-    const padding = 6 / zoomFactor;
-    const boxHeight = 20 / zoomFactor;
-
-    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
-
-    // Testo
-    ctx.fillStyle = labelText;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+    drawHorizontalLabel(labelX, labelY, `${realDistance} mm`, labelBg, labelText);
 }
 
 function drawCircleMeasurementLabel(circle, centerX, centerY, radiusPointX, radiusPointY) {
@@ -711,24 +785,8 @@ function drawCirclePreviewMeasurementLabel(center, radiusPoint, centerX, centerY
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
-    // Font size fisso compensato per zoom
-    const fontSize = LABEL_FONT_SIZE / zoomFactor;
-    ctx.font = `bold ${fontSize}px Arial`;
-
-    // Testo con raggio e diametro
     const text = `r: ${radiusReal}mm | ø: ${diameterReal}mm`;
-    const textWidth = ctx.measureText(text).width;
-    const padding = 6 / zoomFactor;
-    const boxHeight = 20 / zoomFactor;
-
-    // Sfondo dell'etichetta
-    ctx.fillStyle = labelBg;
-    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
-
-    // Testo
-    ctx.fillStyle = labelText;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+    drawHorizontalLabel(labelX, labelY, text, labelBg, labelText);
 }
 
 // === GESTIONE EVENTI TOUCH E CLICK ===
@@ -987,6 +1045,7 @@ function handleMouseUp() {
         draggedSegment = null;
         draggedPointType = null;
         canvas.style.cursor = 'crosshair';
+        saveState();
         showToast('Punto spostato', 'success');
     }
     if (isMousePanning) {
@@ -1180,6 +1239,7 @@ function handleTouchEnd(event) {
             isDraggingPoint = false;
             draggedSegment = null;
             draggedPointType = null;
+            saveState();
             showToast('Punto spostato', 'success');
         } else if (!isPanning && !isMultiTouch && touches.length === 1) {
             // Single tap without pan
@@ -1369,88 +1429,67 @@ function cancelCurrentDrawing() {
 
 function createSegment() {
     if (drawingMode === 'segment') {
-        // Modalità segmento singolo
         const segment = {
             id: segmentCounter++,
             name: `Segmento ${segmentCounter - 1}`,
             start: points[0],
             end: points[1]
         };
-
         segments.push(segment);
         selectedSegment = segment;
         addDebugLog('SEGMENT_CREATED', `id=${segment.id}, start=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}), end=(${points[1].x.toFixed(1)},${points[1].y.toFixed(1)})`);
         points = [];
-        previewPoint = null; // Reset preview per evitare bug
-
+        previewPoint = null;
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Nuovo segmento creato', 'success');
         drawCanvas();
     } else if (drawingMode === 'continuous') {
-        // Modalità segmento continuativo
         const segment = {
             id: segmentCounter++,
             name: `Cont ${segmentCounter - 1}`,
             start: points[0],
             end: points[1]
         };
-
         segments.push(segment);
         selectedSegment = segment;
-
-        // In modalità continuativa, il punto finale diventa il punto iniziale del prossimo segmento
         points = [points[1]];
-        // Non resettiamo previewPoint per mantenere l'anteprima
-
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Segmento aggiunto alla catena', 'success');
         drawCanvas();
     } else if (drawingMode === 'rectangle') {
-        // Modalità rettangolo: crea 4 segmenti
         const minX = Math.min(points[0].x, points[1].x);
         const maxX = Math.max(points[0].x, points[1].x);
         const minY = Math.min(points[0].y, points[1].y);
         const maxY = Math.max(points[0].y, points[1].y);
-
-        // I 4 vertici del rettangolo
         const topLeft = { x: minX, y: minY };
         const topRight = { x: maxX, y: minY };
         const bottomRight = { x: maxX, y: maxY };
         const bottomLeft = { x: minX, y: maxY };
-
-        // Crea i 4 segmenti del rettangolo
         const rectSegments = [
             { start: topLeft, end: topRight, name: `Rett${segmentCounter} - Superiore` },
             { start: topRight, end: bottomRight, name: `Rett${segmentCounter} - Destro` },
             { start: bottomRight, end: bottomLeft, name: `Rett${segmentCounter} - Inferiore` },
             { start: bottomLeft, end: topLeft, name: `Rett${segmentCounter} - Sinistro` }
         ];
-
         rectSegments.forEach(seg => {
-            const segment = {
-                id: segmentCounter++,
-                name: seg.name,
-                start: seg.start,
-                end: seg.end
-            };
-            segments.push(segment);
+            segments.push({ id: segmentCounter++, name: seg.name, start: seg.start, end: seg.end });
         });
-
-        selectedSegment = segments[segments.length - 1]; // Seleziona l'ultimo segmento creato
+        selectedSegment = segments[segments.length - 1];
         points = [];
-        previewPoint = null; // Resetta l'anteprima
-
+        previewPoint = null;
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Nuovo rettangolo creato (4 segmenti)', 'success');
         drawCanvas();
     } else if (drawingMode === 'circle') {
-        // Modalità cerchio: crea un cerchio con centro e punto sul raggio
         const circle = {
             id: segmentCounter++,
             type: 'circle',
@@ -1458,15 +1497,14 @@ function createSegment() {
             center: points[0],
             radiusPoint: points[1]
         };
-
         segments.push(circle);
         selectedSegment = circle;
         points = [];
-        previewPoint = null; // Resetta l'anteprima
-
+        previewPoint = null;
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Nuovo cerchio creato', 'success');
         drawCanvas();
     }
@@ -1730,42 +1768,53 @@ function findNearestPoint(x, y) {
 }
 
 // === FUNZIONI UI E UTILITA' ===
+function getGridCellMm() {
+    if (!gridEnabled || !img.complete || !img.width || !img.height) return null;
+    const shorter = Math.min(img.width, img.height);
+    let N;
+    if (gridType === 'thirds') N = 3;
+    else if (gridType === 'golden') N = 5;
+    else if (gridType === 'square') N = 8;
+    else N = Math.max(1, gridCustomCols);
+    const cellPixels = shorter / N;
+    const referencePx = parseFloat(document.getElementById('scale')?.value);
+    const realMm = parseFloat(document.getElementById('real')?.value);
+    if (!referencePx || !realMm || referencePx <= 0 || realMm <= 0) return null;
+    return (cellPixels * (realMm / referencePx)).toFixed(2);
+}
+
 function updateMeasurement() {
+    const gridCellMm = getGridCellMm();
+    const gridStr = gridCellMm !== null ? ` | ⊞ ${gridCellMm}mm` : '';
+
     if (selectedSegment) {
         let pixelDistance, realDistance, statusText;
 
         if (selectedSegment.type === 'circle') {
-            // Per i cerchi: mostra raggio e diametro
             const radiusPixels = getPixelDistance(selectedSegment.center, selectedSegment.radiusPoint);
             const radiusReal = calculateDistance(selectedSegment.center, selectedSegment.radiusPoint);
             const diameterReal = (parseFloat(radiusReal) * 2).toFixed(2);
 
             pixelDistance = radiusPixels;
             realDistance = radiusReal;
-            statusText = `${selectedSegment.name}: r=${radiusReal}mm | ø=${diameterReal}mm`;
+            statusText = `${selectedSegment.name}: r=${radiusReal}mm | ø=${diameterReal}mm${gridStr}`;
         } else {
-            // Per i segmenti: mostra distanza
             pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
             realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
             const angleDeg = getSegmentAngleDeg(selectedSegment);
             const angleStr = angleDeg !== null ? ` | ${angleDeg.toFixed(1)}°` : '';
-            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm${angleStr}`;
+            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm${angleStr}${gridStr}`;
         }
 
         const pixelSelElement = document.getElementById('pixelsel');
         const realSelElement = document.getElementById('realsel');
 
-        // Mostra i pixel del segmento selezionato con maggiore precisione
         if (pixelSelElement) {
             pixelSelElement.value = pixelDistance.toFixed(3);
         }
-
-        // Mostra la misura calcolata con il rapporto corrente
         if (realSelElement) {
             realSelElement.value = realDistance;
         }
-
-        // Aggiorna status bar
         if (currentMeasurement) {
             currentMeasurement.textContent = statusText;
         }
@@ -1780,7 +1829,9 @@ function updateMeasurement() {
             realSelElement.value = '';
         }
         if (currentMeasurement) {
-            currentMeasurement.textContent = 'Nessuna selezione';
+            currentMeasurement.textContent = gridCellMm !== null
+                ? `Nessuna selezione${gridStr}`
+                : 'Nessuna selezione';
         }
     }
 }
@@ -1890,6 +1941,7 @@ function deleteSegment(segment) {
                 updateMeasurement();
             }
             updateSegmentsList();
+            saveState();
             drawCanvas();
             showToast('Segmento eliminato', 'warning');
         }
@@ -1897,23 +1949,7 @@ function deleteSegment(segment) {
 }
 
 function undoLastSegment() {
-    if (segments.length === 0) {
-        showToast('Nessun segmento da annullare', 'info');
-        return;
-    }
-
-    // Rimuovi l'ultimo segmento inserito
-    const removedSegment = segments.pop();
-
-    // Se il segmento rimosso era selezionato, deseleziona
-    if (selectedSegment === removedSegment) {
-        selectedSegment = null;
-        updateMeasurement();
-    }
-
-    updateSegmentsList();
-    drawCanvas();
-    showToast(`Annullato: ${removedSegment.name}`, 'info');
+    undo();
 }
 
 function deleteAllSegments() {
@@ -1930,6 +1966,7 @@ function deleteAllSegments() {
             points = [];
             updateMeasurement();
             updateSegmentsList();
+            saveState();
             drawCanvas();
             showToast('Tutti i segmenti eliminati', 'warning');
         }
@@ -2066,26 +2103,28 @@ function updateZoomLevel() {
 
 function resetView() {
     zoomFactor = 1;
-    
-    // Reset pan (ricentra l'immagine)
     panX = 0;
     panY = 0;
     imgX = centerX + panX;
     imgY = centerY + panY;
-    
+    updateZoomLevel();
+    saveState();
     drawCanvas();
 }
-
 
 function zoomIn() {
     zoomFactor = Math.min(5, zoomFactor + 0.2);
     adjustPanForZoom(zoomFactor);
+    updateZoomLevel();
+    saveState();
     drawCanvas();
 }
 
 function zoomOut() {
     zoomFactor = Math.max(0.5, zoomFactor - 0.2);
     adjustPanForZoom(zoomFactor);
+    updateZoomLevel();
+    saveState();
     drawCanvas();
 }
 
@@ -2519,7 +2558,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const resetElement = document.getElementById('reset');
     const centerElement = document.getElementById('center');
 
-    if (undoBtn) undoBtn.addEventListener('click', undoLastSegment);
+    if (undoBtn) undoBtn.addEventListener('click', undo);
+    const redoBtn = document.getElementById('redo-btn');
+    if (redoBtn) redoBtn.addEventListener('click', redo);
     if (deleteAllElement) deleteAllElement.addEventListener('click', deleteAllSegments);
     if (zoomInElement) zoomInElement.addEventListener('click', zoomIn);
     if (zoomOutElement) zoomOutElement.addEventListener('click', zoomOut);
@@ -2548,6 +2589,7 @@ document.addEventListener("DOMContentLoaded", function() {
         zoomFactor = newZoom;
         scheduleRedraw();
         updateZoomLevel();
+        saveStateDebounced(700);
     }, { passive: false });
 
     // Resize canvas on window resize
@@ -2565,13 +2607,15 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Listener per tasto ESC - annulla disegno corrente
-    // Listener per Ctrl+Z / Cmd+Z - undo ultimo segmento
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' || event.key === 'Esc') {
             cancelCurrentDrawing();
-        } else if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-            event.preventDefault(); // Previeni il comportamento predefinito del browser
-            undoLastSegment();
+        } else if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            undo();
+        } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+            event.preventDefault();
+            redo();
         }
     });
 
@@ -2715,6 +2759,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (rotationSlider) rotationSlider.value = imageRotation;
         if (rotationInput) rotationInput.value = imageRotation;
         drawCanvas();
+        saveStateDebounced(600);
     }
 
     if (rotationSlider) {
@@ -2746,16 +2791,16 @@ document.addEventListener("DOMContentLoaded", function() {
     const gridColorEl = document.getElementById('grid-color');
 
     if (gridToggle) {
-        gridToggle.addEventListener('change', e => { gridEnabled = e.target.checked; drawCanvas(); });
+        gridToggle.addEventListener('change', e => { gridEnabled = e.target.checked; drawCanvas(); updateMeasurement(); });
     }
     if (gridTypeEl) {
         gridTypeEl.addEventListener('change', e => {
             gridType = e.target.value;
             if (gridCustomInputs) gridCustomInputs.classList.toggle('d-none', gridType !== 'custom');
-            drawCanvas();
+            drawCanvas(); updateMeasurement();
         });
     }
-    if (gridColsEl) gridColsEl.addEventListener('input', e => { gridCustomCols = parseInt(e.target.value) || 4; drawCanvas(); });
+    if (gridColsEl) gridColsEl.addEventListener('input', e => { gridCustomCols = parseInt(e.target.value) || 4; drawCanvas(); updateMeasurement(); });
     if (gridOpacityEl) gridOpacityEl.addEventListener('input', e => { gridOpacity = parseFloat(e.target.value); drawCanvas(); });
     if (gridColorEl) gridColorEl.addEventListener('input', e => { gridColor = e.target.value; drawCanvas(); });
 
