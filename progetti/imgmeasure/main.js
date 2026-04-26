@@ -55,6 +55,9 @@ let currentTheme = 'dark'; // 'light', 'dark', 'contrast'
 // DPI
 let dpr = window.devicePixelRatio || 1;
 
+// Rotazione immagine
+let imageRotation = 0; // gradi 0-360
+
 // Grid
 let gridEnabled = false;
 let gridType = 'thirds';
@@ -101,6 +104,11 @@ function loadImage(event) {
         points = [];
         selectedSegment = null;
         zoomFactor = 1;
+        imageRotation = 0;
+        const rs = document.getElementById('rotation-slider');
+        const ri = document.getElementById('rotation-input');
+        if (rs) rs.value = 0;
+        if (ri) ri.value = 0;
 
         // Ripristina segmenti salvati (solo al primo caricamento immagine)
         const wasEmpty = segments.length === 0;
@@ -176,13 +184,26 @@ function drawCanvas() {
     ctx.save();
     ctx.scale(zoomFactor, zoomFactor);
 
-    // Disegna l'immagine
+    // Applica rotazione al contesto: immagine e segmenti ruotano insieme
+    if (imageRotation !== 0 && img.width && img.height) {
+        const cx = imgX + (img.width * scaleFactor) / 2;
+        const cy = imgY + (img.height * scaleFactor) / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(imageRotation * Math.PI / 180);
+        ctx.translate(-cx, -cy);
+    }
+
+    // Disegna l'immagine (ruota con il contesto)
     if (img.width && img.height) {
         ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
     }
 
-    // Disegna griglia di riferimento (sopra l'immagine, sotto i segmenti)
+    // Griglia: sopra l'immagine, sotto i segmenti, fissa (senza rotazione)
+    // Esce temporaneamente dal contesto ruotato ripristinando solo lo zoom
+    ctx.save();
+    ctx.setTransform(zoomFactor, 0, 0, zoomFactor, 0, 0);
     drawGrid();
+    ctx.restore();
 
     // Disegna tutti i segmenti solo se showSegments è true
     if (showSegments) {
@@ -1461,22 +1482,30 @@ function drawGrid() {
 
     if (step <= 0) return;
 
+    // Estendi le linee su tutto il canvas visibile (coordinate logiche pre-zoom)
+    const vw = canvas.width / zoomFactor;
+    const vh = canvas.height / zoomFactor;
+
+    // Trova la prima linea verticale a sinistra del canvas allineata alla griglia dell'immagine
+    const firstX = imgX - Math.ceil(imgX / step) * step;
+    const firstY = imgY - Math.ceil(imgY / step) * step;
+
     ctx.save();
     ctx.globalAlpha = gridOpacity;
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1 / zoomFactor;
     ctx.setLineDash([4 / zoomFactor, 4 / zoomFactor]);
 
-    for (let x = imgX + step; x < imgX + iw - 0.5; x += step) {
+    for (let x = firstX; x <= vw + step; x += step) {
         ctx.beginPath();
-        ctx.moveTo(x, imgY);
-        ctx.lineTo(x, imgY + ih);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, vh);
         ctx.stroke();
     }
-    for (let y = imgY + step; y < imgY + ih - 0.5; y += step) {
+    for (let y = firstY; y <= vh + step; y += step) {
         ctx.beginPath();
-        ctx.moveTo(imgX, y);
-        ctx.lineTo(imgX + iw, y);
+        ctx.moveTo(0, y);
+        ctx.lineTo(vw, y);
         ctx.stroke();
     }
 
@@ -2664,6 +2693,36 @@ document.addEventListener("DOMContentLoaded", function() {
                 supportContentIt.classList.remove('d-none');
             }
         });
+    }
+
+    // Rotazione immagine
+    const rotationSlider = document.getElementById('rotation-slider');
+    const rotationInput = document.getElementById('rotation-input');
+
+    function applyRotation(deg) {
+        imageRotation = Math.max(0, Math.min(360, deg));
+        if (rotationSlider) rotationSlider.value = imageRotation;
+        if (rotationInput) rotationInput.value = imageRotation;
+        drawCanvas();
+    }
+
+    if (rotationSlider) {
+        rotationSlider.addEventListener('input', e => applyRotation(parseInt(e.target.value)));
+    }
+    if (rotationInput) {
+        rotationInput.addEventListener('input', e => {
+            const v = parseInt(e.target.value);
+            if (!isNaN(v)) applyRotation(v);
+        });
+        rotationInput.addEventListener('blur', e => {
+            const v = parseInt(e.target.value);
+            applyRotation(isNaN(v) ? 0 : v);
+        });
+    }
+
+    const rotationResetBtn = document.getElementById('rotation-reset');
+    if (rotationResetBtn) {
+        rotationResetBtn.addEventListener('click', () => applyRotation(0));
     }
 
     // Griglia di riferimento
