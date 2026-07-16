@@ -311,9 +311,11 @@
   overflow: hidden;
   background: var(--color-surface);
 }
-.nd-hero__media-frame svg {
+.nd-hero__media-frame svg,
+.nd-hero__media-frame img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 .nd-hero__flow-output {
   stroke-dasharray: 6 10;
