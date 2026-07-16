@@ -52,6 +52,115 @@ let showSegments = true; // Flag per mostrare/nascondere i segmenti
 // Theme
 let currentTheme = 'dark'; // 'light', 'dark', 'contrast'
 
+// DPI
+let dpr = window.devicePixelRatio || 1;
+
+// Rotazione immagine
+let imageRotation = 0; // gradi 0-360
+
+// Grid
+let gridEnabled = false;
+let gridType = 'thirds';
+let gridCustomCols = 4;
+let gridCustomRows = 4;
+let gridOpacity = 0.4;
+let gridColor = '#ffffff';
+
+// RAF throttle
+let rafPending = false;
+function scheduleRedraw() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => { drawCanvas(); rafPending = false; });
+}
+
+// === UNDO / REDO ===
+// Strategia "save after": saveState() si chiama DOPO ogni operazione.
+// history[0] = stato iniziale (da loadImage), history[N] = dopo N operazioni.
+// undo: index--, restore history[index]
+// redo: index++, restore history[index]
+const MAX_HISTORY = 60;
+let history = [];
+let historyIndex = -1;
+
+// Timer per debounce zoom-rotella e rotazione-slider (operazioni continue)
+let _debounceSaveTimer = null;
+
+function captureState() {
+    return {
+        segments: JSON.parse(JSON.stringify(segments)),
+        selectedId: selectedSegment ? selectedSegment.id : null,
+        imageRotation,
+        zoomFactor,
+        panX,
+        panY
+    };
+}
+
+// Salva lo stato corrente (dopo l'operazione). Annulla eventuali debounce pendenti.
+function saveState() {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = null;
+    history = history.slice(0, historyIndex + 1);
+    history.push(captureState());
+    if (history.length > MAX_HISTORY) history.shift();
+    else historyIndex++;
+    updateUndoRedoButtons();
+}
+
+// Versione debounced per operazioni continue (wheel, slider rotazione).
+// Salva l'ultimo stato dopo ms millisecondi di inattività.
+function saveStateDebounced(ms) {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = setTimeout(() => saveState(), ms);
+}
+
+function restoreState(snapshot) {
+    segments = JSON.parse(JSON.stringify(snapshot.segments));
+    imageRotation = snapshot.imageRotation;
+    zoomFactor = snapshot.zoomFactor;
+    panX = snapshot.panX;
+    panY = snapshot.panY;
+    imgX = centerX + panX;
+    imgY = centerY + panY;
+    selectedSegment = snapshot.selectedId !== null
+        ? segments.find(s => s.id === snapshot.selectedId) || null
+        : null;
+    const rotSlider = document.getElementById('rotation-slider');
+    const rotInput = document.getElementById('rotation-input');
+    if (rotSlider) rotSlider.value = imageRotation;
+    if (rotInput) rotInput.value = imageRotation;
+    updateZoomLevel();
+    updateSegmentsList();
+    updateMeasurement();
+    drawCanvas();
+}
+
+function undo() {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = null;
+    if (historyIndex <= 0) return;
+    historyIndex--;
+    restoreState(history[historyIndex]);
+    updateUndoRedoButtons();
+}
+
+function redo() {
+    clearTimeout(_debounceSaveTimer);
+    _debounceSaveTimer = null;
+    if (historyIndex >= history.length - 1) return;
+    historyIndex++;
+    restoreState(history[historyIndex]);
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    if (undoBtn) undoBtn.disabled = historyIndex <= 0;
+    if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
+}
+
 // Feedback system
 let feedbackShown = false; // Flag per tracciare se il modal è già stato mostrato in questa sessione
 const FEEDBACK_TRIGGER_COUNT = 3; // Numero di segmenti dopo cui mostrare il modal
@@ -74,18 +183,35 @@ function loadImage(event) {
     const file = event.target.files[0];
     if (!file) return;
     
+    if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
     img.src = URL.createObjectURL(file);
-    
+
     img.onload = function() {
         resizeCanvas();
-        segments = [];
         points = [];
         selectedSegment = null;
-        segmentCounter = 1;
-        zoomFactor = 1; // Reset zoom when loading new image
+        zoomFactor = 1;
+        imageRotation = 0;
+        const rs = document.getElementById('rotation-slider');
+        const ri = document.getElementById('rotation-input');
+        if (rs) rs.value = 0;
+        if (ri) ri.value = 0;
+
+        // Ripristina segmenti salvati (solo al primo caricamento immagine)
+        const wasEmpty = segments.length === 0;
+        if (wasEmpty) {
+            loadStateFromStorage();
+        }
+
         drawCanvas();
         updateSegmentsList();
-        showToast('Immagine caricata con successo', 'success');
+        // Resetta history e salva stato iniziale
+        history = [];
+        historyIndex = -1;
+        saveState();
+        updateUndoRedoButtons();
+        const hint = segments.length > 0 && wasEmpty ? ` (${segments.length} segmenti ripristinati)` : '';
+        showToast(`Immagine caricata con successo${hint}`, 'success');
     };
 }
 
@@ -111,6 +237,7 @@ function resizeCanvas() {
     }
     
     // Imposta sempre le dimensioni del canvas al massimo disponibile
+    dpr = 1; // DPR fisso a 1 per evitare distorsioni delle proporzioni con max-width/max-height CSS
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     
@@ -149,10 +276,26 @@ function drawCanvas() {
     ctx.save();
     ctx.scale(zoomFactor, zoomFactor);
 
-    // Disegna l'immagine
+    // Applica rotazione al contesto: immagine e segmenti ruotano insieme
+    if (imageRotation !== 0 && img.width && img.height) {
+        const cx = imgX + (img.width * scaleFactor) / 2;
+        const cy = imgY + (img.height * scaleFactor) / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(imageRotation * Math.PI / 180);
+        ctx.translate(-cx, -cy);
+    }
+
+    // Disegna l'immagine (ruota con il contesto)
     if (img.width && img.height) {
         ctx.drawImage(img, imgX, imgY, img.width * scaleFactor, img.height * scaleFactor);
     }
+
+    // Griglia: sopra l'immagine, sotto i segmenti, fissa (senza rotazione)
+    // Esce temporaneamente dal contesto ruotato ripristinando solo lo zoom
+    ctx.save();
+    ctx.setTransform(zoomFactor, 0, 0, zoomFactor, 0, 0);
+    drawGrid();
+    ctx.restore();
 
     // Disegna tutti i segmenti solo se showSegments è true
     if (showSegments) {
@@ -222,12 +365,11 @@ function drawSegment(segment) {
     ctx.lineTo(endX, endY);
     ctx.stroke();
 
-    // Punti di controllo
-    drawControlPoint(startX, startY, segment === selectedSegment);
-    drawControlPoint(endX, endY, segment === selectedSegment);
 
-    // Etichetta con la misura
+    // Punti di controllo e etichetta: solo se selezionato
     if (segment === selectedSegment) {
+        drawControlPoint(startX, startY, true);
+        drawControlPoint(endX, endY, true);
         drawMeasurementLabel(segment, startX, startY, endX, endY);
     }
 }
@@ -423,12 +565,11 @@ function drawCircle(circle) {
         ctx.stroke();
     }
 
-    // Punti di controllo
-    drawControlPoint(centerX, centerY, circle === selectedSegment);
-    drawControlPoint(radiusPointX, radiusPointY, circle === selectedSegment);
 
-    // Etichetta con le misure
+    // Punti di controllo e etichetta: solo se selezionato
     if (circle === selectedSegment) {
+        drawControlPoint(centerX, centerY, true);
+        drawControlPoint(radiusPointX, radiusPointY, true);
         drawCircleMeasurementLabel(circle, centerX, centerY, radiusPointX, radiusPointY);
     }
 }
@@ -507,6 +648,24 @@ function drawSnapIndicator(point) {
     ctx.fill();
 }
 
+function drawHorizontalLabel(labelX, labelY, text, bg, textColor) {
+    const t = ctx.getTransform();
+    const sx = t.a * labelX + t.c * labelY + t.e;
+    const sy = t.b * labelX + t.d * labelY + t.f;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.font = `bold ${LABEL_FONT_SIZE}px Arial`;
+    const textWidth = ctx.measureText(text).width;
+    const padding = 6;
+    const boxHeight = 20;
+    ctx.fillStyle = bg;
+    ctx.fillRect(sx - textWidth / 2 - padding, sy - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, sx, sy - 2);
+    ctx.restore();
+}
+
 function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--label-bg').trim();
     const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
@@ -516,78 +675,42 @@ function drawMeasurementLabel(segment, startX, startY, endX, endY) {
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
 
-    // Calcola la posizione dell'etichetta spostata dalla linea - offset fisso
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
-    const fixedOffset = 20 / zoomFactor; // Offset fisso
+    const fixedOffset = 20 / zoomFactor;
     const offsetX = (-dy / length) * fixedOffset;
     const offsetY = (dx / length) * fixedOffset;
 
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
-    // Font size fisso compensato per zoom
-    const fontSize = LABEL_FONT_SIZE / zoomFactor;
-    ctx.font = `bold ${fontSize}px Arial`;
-
-    // Sfondo dell'etichetta
-    ctx.fillStyle = labelBg;
-    const text = `${realDistance} mm`;
-    const textWidth = ctx.measureText(text).width;
-    const padding = 6 / zoomFactor;
-    const boxHeight = 20 / zoomFactor;
-
-    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
-
-    // Testo
-    ctx.fillStyle = labelText;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+    drawHorizontalLabel(labelX, labelY, `${realDistance} mm`, labelBg, labelText);
 }
 
 function drawPreviewMeasurementLabel(point1, point2, startX, startY, endX, endY) {
     const labelBg = getComputedStyle(document.documentElement).getPropertyValue('--preview-color-alpha').trim();
     const labelText = getComputedStyle(document.documentElement).getPropertyValue('--label-text').trim();
 
-    // Calcola la distanza in tempo reale
     const realDistance = calculateDistance(point1, point2);
 
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
 
-    // Calcola la posizione dell'etichetta spostata dalla linea - offset fisso
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    // Evita divisione per zero se i punti sono troppo vicini
     if (length < 1) return;
 
-    const fixedOffset = 20 / zoomFactor; // Offset fisso
+    const fixedOffset = 20 / zoomFactor;
     const offsetX = (-dy / length) * fixedOffset;
     const offsetY = (dx / length) * fixedOffset;
 
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
-    // Font size fisso compensato per zoom
-    const fontSize = LABEL_FONT_SIZE / zoomFactor;
-    ctx.font = `bold ${fontSize}px Arial`;
-
-    // Sfondo dell'etichetta con opacità maggiore per l'anteprima
-    ctx.fillStyle = labelBg;
-    const text = `${realDistance} mm`;
-    const textWidth = ctx.measureText(text).width;
-    const padding = 6 / zoomFactor;
-    const boxHeight = 20 / zoomFactor;
-
-    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
-
-    // Testo
-    ctx.fillStyle = labelText;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+    drawHorizontalLabel(labelX, labelY, `${realDistance} mm`, labelBg, labelText);
 }
 
 function drawCircleMeasurementLabel(circle, centerX, centerY, radiusPointX, radiusPointY) {
@@ -662,24 +785,8 @@ function drawCirclePreviewMeasurementLabel(center, radiusPoint, centerX, centerY
     const labelX = midX + offsetX;
     const labelY = midY + offsetY;
 
-    // Font size fisso compensato per zoom
-    const fontSize = LABEL_FONT_SIZE / zoomFactor;
-    ctx.font = `bold ${fontSize}px Arial`;
-
-    // Testo con raggio e diametro
     const text = `r: ${radiusReal}mm | ø: ${diameterReal}mm`;
-    const textWidth = ctx.measureText(text).width;
-    const padding = 6 / zoomFactor;
-    const boxHeight = 20 / zoomFactor;
-
-    // Sfondo dell'etichetta
-    ctx.fillStyle = labelBg;
-    ctx.fillRect(labelX - textWidth/2 - padding, labelY - boxHeight * 0.8, textWidth + padding * 2, boxHeight);
-
-    // Testo
-    ctx.fillStyle = labelText;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, labelX, labelY - 2 / zoomFactor);
+    drawHorizontalLabel(labelX, labelY, text, labelBg, labelText);
 }
 
 // === GESTIONE EVENTI TOUCH E CLICK ===
@@ -838,7 +945,7 @@ function handlePointerMove(event) {
             const snapPoint = findNearestEndpoint(coords.x, coords.y);
             snapPreviewPoint = snapPoint;
 
-            drawCanvas();
+            scheduleRedraw();
         }
     }
 }
@@ -884,7 +991,7 @@ function handleMouseMove(event) {
 
             updateMeasurement();
             updateSegmentsList();
-            drawCanvas();
+            scheduleRedraw();
         }
     } else if (isMousePanning) {
         event.preventDefault();
@@ -899,7 +1006,7 @@ function handleMouseMove(event) {
 
         mouseStartX = event.clientX;
         mouseStartY = event.clientY;
-        drawCanvas();
+        scheduleRedraw();
     } else if (showPreview && points.length === 1) {
         // Aggiorna l'anteprima (segmento o rettangolo)
         const coords = getCanvasCoordinates(event.clientX, event.clientY);
@@ -909,7 +1016,7 @@ function handleMouseMove(event) {
         const snapPoint = findNearestEndpoint(coords.x, coords.y);
         snapPreviewPoint = snapPoint;
 
-        drawCanvas();
+        scheduleRedraw();
     } else if (drawingMode === 'select') {
         // In modalità selezione, mostra cursore appropriato quando si passa su un punto
         const coords = getCanvasCoordinates(event.clientX, event.clientY);
@@ -927,7 +1034,7 @@ function handleMouseMove(event) {
 
         if (snapPoint !== snapPreviewPoint) {
             snapPreviewPoint = snapPoint;
-            drawCanvas();
+            scheduleRedraw();
         }
     }
 }
@@ -938,6 +1045,7 @@ function handleMouseUp() {
         draggedSegment = null;
         draggedPointType = null;
         canvas.style.cursor = 'crosshair';
+        saveState();
         showToast('Punto spostato', 'success');
     }
     if (isMousePanning) {
@@ -987,8 +1095,8 @@ function handleTouchStart(event) {
         const touch = touches[0];
         const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
 
-        // Check for double tap (disabilitato in modalità selezione per evitare reset zoom accidentale)
-        if (currentTime - lastClickTime < 300 && drawingMode !== 'select') {
+        // Check for double tap (disabilitato in modalità selezione e durante disegno in corso per evitare reset zoom accidentale con pennino)
+        if (currentTime - lastClickTime < 300 && drawingMode !== 'select' && points.length === 0) {
             handleDoubleTap();
             return;
         }
@@ -1075,7 +1183,7 @@ function handleTouchMove(event) {
 
             updateMeasurement();
             updateSegmentsList();
-            drawCanvas();
+            scheduleRedraw();
             return; // Non fare pan durante il drag
         }
 
@@ -1096,7 +1204,7 @@ function handleTouchMove(event) {
 
             panStartX = touch.clientX;
             panStartY = touch.clientY;
-            drawCanvas();
+            scheduleRedraw();
         } else if (showPreview && points.length === 1 && !isPanning) {
             // Aggiorna l'anteprima (segmento o rettangolo) durante il movimento
             const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
@@ -1106,16 +1214,15 @@ function handleTouchMove(event) {
             const snapPoint = findNearestEndpoint(coords.x, coords.y);
             snapPreviewPoint = snapPoint;
 
-            drawCanvas();
+            scheduleRedraw();
         }
     } else if (event.touches.length === 2) {
         // Pinch to zoom
         const distance = getDistance(event.touches[0], event.touches[1]);
         const scale = distance / initialDistance;
-        const oldZoom = zoomFactor;
         zoomFactor = Math.max(0.5, Math.min(5, initialZoom * scale));
-        adjustPanForZoom(oldZoom, zoomFactor);
-        drawCanvas();
+        adjustPanForZoom(zoomFactor);
+        scheduleRedraw();
     }
 }
 
@@ -1132,6 +1239,7 @@ function handleTouchEnd(event) {
             isDraggingPoint = false;
             draggedSegment = null;
             draggedPointType = null;
+            saveState();
             showToast('Punto spostato', 'success');
         } else if (!isPanning && !isMultiTouch && touches.length === 1) {
             // Single tap without pan
@@ -1190,6 +1298,8 @@ function handleDoubleTap() {
 
 function handleDoubleClick(event) {
     event.preventDefault();
+    // Se siamo su tablet con pennino, il double-tap è già gestito da handleTouchStart — evita doppio reset
+    if (Date.now() - lastTouchEndTime < 500) return;
     lastDoubleClickTime = Date.now();
     // Double click to reset zoom and cancel current drawing
     let actionTaken = false;
@@ -1233,12 +1343,21 @@ function getCanvasCoordinates(clientX, clientY) {
     const canvasX = rawCanvasX * scaleX;
     const canvasY = rawCanvasY * scaleY;
     
-    // 2. Converti in coordinate del sistema logico
-    // Il sistema logico è il sistema di coordinate prima di ctx.scale()
-    // Quindi dividiamo per zoomFactor per "annullare" il scale che verrà applicato
-    const logicalX = canvasX / zoomFactor;
-    const logicalY = canvasY / zoomFactor;
-    
+    // 2. Converti in coordinate del sistema logico (annulla zoomFactor)
+    let logicalX = canvasX / zoomFactor;
+    let logicalY = canvasY / zoomFactor;
+
+    // 2b. Applica la rotazione inversa per ricondurre il click allo spazio ruotato dell'immagine
+    if (imageRotation !== 0 && img.width && img.height) {
+        const cx = imgX + (img.width * scaleFactor) / 2;
+        const cy = imgY + (img.height * scaleFactor) / 2;
+        const rad = -imageRotation * Math.PI / 180;
+        const dx = logicalX - cx;
+        const dy = logicalY - cy;
+        logicalX = cx + dx * Math.cos(rad) - dy * Math.sin(rad);
+        logicalY = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+    }
+
     // 3. Rimuovi l'offset dell'immagine per ottenere coordinate relative all'immagine
     const relativeX = logicalX - imgX;
     const relativeY = logicalY - imgY;
@@ -1310,88 +1429,67 @@ function cancelCurrentDrawing() {
 
 function createSegment() {
     if (drawingMode === 'segment') {
-        // Modalità segmento singolo
         const segment = {
             id: segmentCounter++,
             name: `Segmento ${segmentCounter - 1}`,
             start: points[0],
             end: points[1]
         };
-
         segments.push(segment);
         selectedSegment = segment;
         addDebugLog('SEGMENT_CREATED', `id=${segment.id}, start=(${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}), end=(${points[1].x.toFixed(1)},${points[1].y.toFixed(1)})`);
         points = [];
-        previewPoint = null; // Reset preview per evitare bug
-
+        previewPoint = null;
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Nuovo segmento creato', 'success');
         drawCanvas();
     } else if (drawingMode === 'continuous') {
-        // Modalità segmento continuativo
         const segment = {
             id: segmentCounter++,
             name: `Cont ${segmentCounter - 1}`,
             start: points[0],
             end: points[1]
         };
-
         segments.push(segment);
         selectedSegment = segment;
-
-        // In modalità continuativa, il punto finale diventa il punto iniziale del prossimo segmento
         points = [points[1]];
-        // Non resettiamo previewPoint per mantenere l'anteprima
-
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Segmento aggiunto alla catena', 'success');
         drawCanvas();
     } else if (drawingMode === 'rectangle') {
-        // Modalità rettangolo: crea 4 segmenti
         const minX = Math.min(points[0].x, points[1].x);
         const maxX = Math.max(points[0].x, points[1].x);
         const minY = Math.min(points[0].y, points[1].y);
         const maxY = Math.max(points[0].y, points[1].y);
-
-        // I 4 vertici del rettangolo
         const topLeft = { x: minX, y: minY };
         const topRight = { x: maxX, y: minY };
         const bottomRight = { x: maxX, y: maxY };
         const bottomLeft = { x: minX, y: maxY };
-
-        // Crea i 4 segmenti del rettangolo
         const rectSegments = [
             { start: topLeft, end: topRight, name: `Rett${segmentCounter} - Superiore` },
             { start: topRight, end: bottomRight, name: `Rett${segmentCounter} - Destro` },
             { start: bottomRight, end: bottomLeft, name: `Rett${segmentCounter} - Inferiore` },
             { start: bottomLeft, end: topLeft, name: `Rett${segmentCounter} - Sinistro` }
         ];
-
         rectSegments.forEach(seg => {
-            const segment = {
-                id: segmentCounter++,
-                name: seg.name,
-                start: seg.start,
-                end: seg.end
-            };
-            segments.push(segment);
+            segments.push({ id: segmentCounter++, name: seg.name, start: seg.start, end: seg.end });
         });
-
-        selectedSegment = segments[segments.length - 1]; // Seleziona l'ultimo segmento creato
+        selectedSegment = segments[segments.length - 1];
         points = [];
-        previewPoint = null; // Resetta l'anteprima
-
+        previewPoint = null;
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Nuovo rettangolo creato (4 segmenti)', 'success');
         drawCanvas();
     } else if (drawingMode === 'circle') {
-        // Modalità cerchio: crea un cerchio con centro e punto sul raggio
         const circle = {
             id: segmentCounter++,
             type: 'circle',
@@ -1399,18 +1497,69 @@ function createSegment() {
             center: points[0],
             radiusPoint: points[1]
         };
-
         segments.push(circle);
         selectedSegment = circle;
         points = [];
-        previewPoint = null; // Resetta l'anteprima
-
+        previewPoint = null;
         updateMeasurement();
         updateSegmentsList();
-        checkAndShowFeedbackModal(); // Controlla se mostrare il modal di feedback
+        saveState();
+        checkAndShowFeedbackModal();
         showToast('Nuovo cerchio creato', 'success');
         drawCanvas();
     }
+}
+
+function drawGrid() {
+    if (!gridEnabled || !img.complete || !img.width || !img.height) return;
+
+    const iw = img.width * scaleFactor;
+    const ih = img.height * scaleFactor;
+    const shorter = Math.min(iw, ih);
+
+    // Il passo è sempre uguale su entrambi gli assi → celle sempre quadrate
+    let step;
+    if (gridType === 'thirds') {
+        step = shorter / 3;
+    } else if (gridType === 'golden') {
+        step = shorter / 5;
+    } else if (gridType === 'square') {
+        step = shorter / 8;
+    } else {
+        step = shorter / Math.max(1, gridCustomCols);
+    }
+
+    if (step <= 0) return;
+
+    // Estendi le linee su tutto il canvas visibile (coordinate logiche pre-zoom)
+    const vw = canvas.width / zoomFactor;
+    const vh = canvas.height / zoomFactor;
+
+    // Trova la prima linea verticale a sinistra del canvas allineata alla griglia dell'immagine
+    const firstX = imgX - Math.ceil(imgX / step) * step;
+    const firstY = imgY - Math.ceil(imgY / step) * step;
+
+    ctx.save();
+    ctx.globalAlpha = gridOpacity;
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1 / zoomFactor;
+    ctx.setLineDash([4 / zoomFactor, 4 / zoomFactor]);
+
+    for (let x = firstX; x <= vw + step; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, vh);
+        ctx.stroke();
+    }
+    for (let y = firstY; y <= vh + step; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(vw, y);
+        ctx.stroke();
+    }
+
+    ctx.setLineDash([]);
+    ctx.restore();
 }
 
 function getPixelDistance(point1, point2) {
@@ -1479,6 +1628,23 @@ function calculateDistance(point1, point2) {
     // Formula corretta: pixelDistance * (realMm / referencePx)
     const realDistance = pixelDistance * (realMm / referencePx);
     return realDistance.toFixed(2);
+}
+
+function getSegmentAngleDeg(segment) {
+    if (!segment || segment.type === 'circle') return null;
+    const dx = segment.end.x - segment.start.x;
+    const dy = segment.end.y - segment.start.y;
+    let deg = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (deg < 0) deg += 360;
+    return deg;
+}
+
+function getAngleBetweenSegments(seg1, seg2) {
+    const a1 = getSegmentAngleDeg(seg1);
+    const a2 = getSegmentAngleDeg(seg2);
+    if (a1 === null || a2 === null) return null;
+    let diff = Math.abs(a1 - a2) % 360;
+    return diff > 180 ? 360 - diff : diff;
 }
 
 function selectSegment(x, y) {
@@ -1602,40 +1768,53 @@ function findNearestPoint(x, y) {
 }
 
 // === FUNZIONI UI E UTILITA' ===
+function getGridCellMm() {
+    if (!gridEnabled || !img.complete || !img.width || !img.height) return null;
+    const shorter = Math.min(img.width, img.height);
+    let N;
+    if (gridType === 'thirds') N = 3;
+    else if (gridType === 'golden') N = 5;
+    else if (gridType === 'square') N = 8;
+    else N = Math.max(1, gridCustomCols);
+    const cellPixels = shorter / N;
+    const referencePx = parseFloat(document.getElementById('scale')?.value);
+    const realMm = parseFloat(document.getElementById('real')?.value);
+    if (!referencePx || !realMm || referencePx <= 0 || realMm <= 0) return null;
+    return (cellPixels * (realMm / referencePx)).toFixed(2);
+}
+
 function updateMeasurement() {
+    const gridCellMm = getGridCellMm();
+    const gridStr = gridCellMm !== null ? ` | ⊞ ${gridCellMm}mm` : '';
+
     if (selectedSegment) {
         let pixelDistance, realDistance, statusText;
 
         if (selectedSegment.type === 'circle') {
-            // Per i cerchi: mostra raggio e diametro
             const radiusPixels = getPixelDistance(selectedSegment.center, selectedSegment.radiusPoint);
             const radiusReal = calculateDistance(selectedSegment.center, selectedSegment.radiusPoint);
             const diameterReal = (parseFloat(radiusReal) * 2).toFixed(2);
 
             pixelDistance = radiusPixels;
             realDistance = radiusReal;
-            statusText = `${selectedSegment.name}: r=${radiusReal}mm | ø=${diameterReal}mm`;
+            statusText = `${selectedSegment.name}: r=${radiusReal}mm | ø=${diameterReal}mm${gridStr}`;
         } else {
-            // Per i segmenti: mostra distanza
             pixelDistance = getPixelDistance(selectedSegment.start, selectedSegment.end);
             realDistance = calculateDistance(selectedSegment.start, selectedSegment.end);
-            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm`;
+            const angleDeg = getSegmentAngleDeg(selectedSegment);
+            const angleStr = angleDeg !== null ? ` | ${angleDeg.toFixed(1)}°` : '';
+            statusText = `${selectedSegment.name}: ${pixelDistance.toFixed(1)}px → ${realDistance} mm${angleStr}${gridStr}`;
         }
 
         const pixelSelElement = document.getElementById('pixelsel');
         const realSelElement = document.getElementById('realsel');
 
-        // Mostra i pixel del segmento selezionato con maggiore precisione
         if (pixelSelElement) {
             pixelSelElement.value = pixelDistance.toFixed(3);
         }
-
-        // Mostra la misura calcolata con il rapporto corrente
         if (realSelElement) {
             realSelElement.value = realDistance;
         }
-
-        // Aggiorna status bar
         if (currentMeasurement) {
             currentMeasurement.textContent = statusText;
         }
@@ -1650,7 +1829,9 @@ function updateMeasurement() {
             realSelElement.value = '';
         }
         if (currentMeasurement) {
-            currentMeasurement.textContent = 'Nessuna selezione';
+            currentMeasurement.textContent = gridCellMm !== null
+                ? `Nessuna selezione${gridStr}`
+                : 'Nessuna selezione';
         }
     }
 }
@@ -1679,6 +1860,15 @@ function setAsReference() {
     drawCanvas();
 }
 
+function selectSegmentById(id) {
+    const seg = segments.find(s => s.id === id);
+    if (!seg) return;
+    selectedSegment = seg;
+    updateMeasurement();
+    updateSegmentsList();
+    drawCanvas();
+}
+
 function updateSegmentsList() {
     // Aggiorna status bar
     if (segmentsStatus) {
@@ -1687,36 +1877,37 @@ function updateSegmentsList() {
     if (segmentsCount) {
         segmentsCount.textContent = segments.length;
     }
-    
+
     if (!segmentsList) return;
-    
+
     if (segments.length === 0) {
         segmentsList.innerHTML = '<div class="list-group-item text-muted text-center">Nessun segmento creato</div>';
         return;
     }
-    
+
     segmentsList.innerHTML = '';
-    
+
     segments.forEach((segment, index) => {
         const segmentItem = createSegmentListItem(segment, index);
         segmentsList.appendChild(segmentItem);
     });
+
+    saveStateToStorage();
 }
 
 function createSegmentListItem(segment, index) {
     const item = document.createElement('div');
     item.className = `list-group-item d-flex justify-content-between align-items-center ${segment === selectedSegment ? 'active' : ''}`;
+    item.dataset.id = segment.id;
 
     let pixelDistance, realDistance, measurementText;
 
     if (segment.type === 'circle') {
-        // Per i cerchi: mostra raggio e diametro
         pixelDistance = getPixelDistance(segment.center, segment.radiusPoint);
         realDistance = calculateDistance(segment.center, segment.radiusPoint);
         const diameterReal = (parseFloat(realDistance) * 2).toFixed(2);
         measurementText = `r: ${realDistance}mm | ø: ${diameterReal}mm`;
     } else {
-        // Per i segmenti: mostra distanza
         pixelDistance = getPixelDistance(segment.start, segment.end);
         realDistance = calculateDistance(segment.start, segment.end);
         measurementText = `${pixelDistance.toFixed(1)}px → ${realDistance}mm`;
@@ -1724,50 +1915,18 @@ function createSegmentListItem(segment, index) {
 
     item.innerHTML = `
         <div class="flex-grow-1">
-            <div class="fw-bold segment-name" contenteditable="true" style="font-size: 0.9rem;">${segment.name}</div>
+            <div class="fw-bold segment-name" contenteditable="true" style="font-size: 0.9rem;" data-seg-id="${segment.id}">${segment.name}</div>
             <div class="text-muted" style="font-size: 0.8rem;">${measurementText}</div>
         </div>
         <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-primary select-btn" title="Seleziona">
+            <button class="btn btn-outline-primary" data-action="select" data-id="${segment.id}" title="Seleziona">
                 <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-outline-danger delete-btn" title="Elimina">
+            <button class="btn btn-outline-danger" data-action="delete" data-id="${segment.id}" title="Elimina">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
     `;
-
-    // Event listeners
-    const nameElement = item.querySelector('.segment-name');
-    const selectBtn = item.querySelector('.select-btn');
-    const deleteBtn = item.querySelector('.delete-btn');
-
-    nameElement.addEventListener('blur', () => {
-        segment.name = nameElement.textContent.trim() || (segment.type === 'circle' ? `Cerchio ${index + 1}` : `Segmento ${index + 1}`);
-        nameElement.textContent = segment.name;
-        updateMeasurement(); // Aggiorna la status bar
-    });
-
-    selectBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedSegment = segment;
-        updateMeasurement();
-        updateSegmentsList();
-        drawCanvas();
-        showToast(`Selezionato: ${segment.name}`, 'info');
-    });
-
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteSegment(segment);
-    });
-
-    item.addEventListener('click', () => {
-        selectedSegment = segment;
-        updateMeasurement();
-        updateSegmentsList();
-        drawCanvas();
-    });
 
     return item;
 }
@@ -1782,6 +1941,7 @@ function deleteSegment(segment) {
                 updateMeasurement();
             }
             updateSegmentsList();
+            saveState();
             drawCanvas();
             showToast('Segmento eliminato', 'warning');
         }
@@ -1789,23 +1949,7 @@ function deleteSegment(segment) {
 }
 
 function undoLastSegment() {
-    if (segments.length === 0) {
-        showToast('Nessun segmento da annullare', 'info');
-        return;
-    }
-
-    // Rimuovi l'ultimo segmento inserito
-    const removedSegment = segments.pop();
-
-    // Se il segmento rimosso era selezionato, deseleziona
-    if (selectedSegment === removedSegment) {
-        selectedSegment = null;
-        updateMeasurement();
-    }
-
-    updateSegmentsList();
-    drawCanvas();
-    showToast(`Annullato: ${removedSegment.name}`, 'info');
+    undo();
 }
 
 function deleteAllSegments() {
@@ -1822,6 +1966,7 @@ function deleteAllSegments() {
             points = [];
             updateMeasurement();
             updateSegmentsList();
+            saveState();
             drawCanvas();
             showToast('Tutti i segmenti eliminati', 'warning');
         }
@@ -1958,33 +2103,33 @@ function updateZoomLevel() {
 
 function resetView() {
     zoomFactor = 1;
-    
-    // Reset pan (ricentra l'immagine)
     panX = 0;
     panY = 0;
     imgX = centerX + panX;
     imgY = centerY + panY;
-    
+    updateZoomLevel();
+    saveState();
     drawCanvas();
 }
 
-
 function zoomIn() {
-    const oldZoom = zoomFactor;
     zoomFactor = Math.min(5, zoomFactor + 0.2);
-    adjustPanForZoom(oldZoom, zoomFactor);
+    adjustPanForZoom(zoomFactor);
+    updateZoomLevel();
+    saveState();
     drawCanvas();
 }
 
 function zoomOut() {
-    const oldZoom = zoomFactor;
     zoomFactor = Math.max(0.5, zoomFactor - 0.2);
-    adjustPanForZoom(oldZoom, zoomFactor);
+    adjustPanForZoom(zoomFactor);
+    updateZoomLevel();
+    saveState();
     drawCanvas();
 }
 
 // === FUNZIONI ZOOM ===
-function adjustPanForZoom(oldZoom, newZoom) {
+function adjustPanForZoom(newZoom) {
     if (!img.width || !img.height) return;
     
     // Calcola il centro desiderato nel sistema scalato
@@ -2022,6 +2167,41 @@ function setTheme(theme) {
         'contrast': 'Alto Contrasto'
     };
     showToast(`${themeNames[theme]} attivato`, 'info');
+}
+
+// === SALVATAGGIO E RIPRISTINO STATO ===
+
+function saveStateToStorage() {
+    try {
+        const state = {
+            segments: segments,
+            segmentCounter: segmentCounter
+        };
+        localStorage.setItem('imgmeasure-state', JSON.stringify(state));
+    } catch (e) {
+        console.warn('Impossibile salvare lo stato:', e);
+    }
+}
+
+function loadStateFromStorage() {
+    try {
+        const saved = localStorage.getItem('imgmeasure-state');
+        if (!saved) return;
+
+        const state = JSON.parse(saved);
+        if (!state.segments || !Array.isArray(state.segments) || state.segments.length === 0) return;
+
+        segments = state.segments;
+        segmentCounter = state.segmentCounter || (segments.length + 1);
+
+        updateSegmentsList();
+        drawCanvas();
+
+        showToast(`${segments.length} segmenti ripristinati. Carica l'immagine per visualizzarli.`, 'info');
+    } catch (e) {
+        console.warn('Impossibile ripristinare lo stato:', e);
+        localStorage.removeItem('imgmeasure-state');
+    }
 }
 
 function loadThemeFromStorage() {
@@ -2082,6 +2262,48 @@ function openFeedbackManually() {
     feedbackModal.show();
 }
 
+// === EXPORT ===
+
+function exportMeasurementsCSV() {
+    if (segments.length === 0) {
+        showToast('Nessuna misura da esportare', 'warning');
+        return;
+    }
+    const rows = [['ID', 'Nome', 'Pixel', 'Misura (mm)', 'Angolo (°)']];
+    segments.forEach(seg => {
+        let px, real, angle;
+        if (seg.type === 'circle') {
+            px = getPixelDistance(seg.center, seg.radiusPoint).toFixed(2);
+            real = calculateDistance(seg.center, seg.radiusPoint);
+            angle = '';
+        } else {
+            px = getPixelDistance(seg.start, seg.end).toFixed(2);
+            real = calculateDistance(seg.start, seg.end);
+            const deg = getSegmentAngleDeg(seg);
+            angle = deg !== null ? deg.toFixed(1) : '';
+        }
+        rows.push([seg.id, `"${seg.name}"`, px, real, angle]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'misurazioni.csv';
+    a.click();
+    showToast('CSV esportato', 'success');
+}
+
+function exportImageWithOverlay() {
+    if (!img.complete || !img.width) {
+        showToast('Nessuna immagine caricata', 'warning');
+        return;
+    }
+    const link = document.createElement('a');
+    link.download = 'misurazioni.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Immagine esportata', 'success');
+}
+
 // Funzione rimossa - ora usiamo Bootstrap Offcanvas
 
 // === EVENT LISTENERS ===
@@ -2095,42 +2317,29 @@ document.addEventListener("DOMContentLoaded", function() {
         uploadElement.addEventListener('change', loadImage);
     }
 
-    // Theme buttons
-    const themeLightBtn = document.getElementById('theme-light');
-    const themeDarkBtn = document.getElementById('theme-dark');
-    const themeContrastBtn = document.getElementById('theme-contrast');
+    // Theme cycle button
+    const themeOrder = ['dark', 'light', 'contrast'];
+    const themeIcons = { dark: 'fa-moon', light: 'fa-sun', contrast: 'fa-adjust' };
 
-    if (themeLightBtn) {
-        themeLightBtn.addEventListener('click', () => {
-            setTheme('light');
-            themeLightBtn.classList.add('active');
-            themeDarkBtn.classList.remove('active');
-            themeContrastBtn.classList.remove('active');
+    function updateThemeBtn() {
+        const btn = document.getElementById('theme-cycle');
+        if (!btn) return;
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = `fas ${themeIcons[currentTheme]}`;
+        }
+    }
+
+    const themeCycleBtn = document.getElementById('theme-cycle');
+    if (themeCycleBtn) {
+        themeCycleBtn.addEventListener('click', () => {
+            const nextIndex = (themeOrder.indexOf(currentTheme) + 1) % themeOrder.length;
+            setTheme(themeOrder[nextIndex]);
+            updateThemeBtn();
         });
     }
 
-    if (themeDarkBtn) {
-        themeDarkBtn.addEventListener('click', () => {
-            setTheme('dark');
-            themeDarkBtn.classList.add('active');
-            themeLightBtn.classList.remove('active');
-            themeContrastBtn.classList.remove('active');
-        });
-    }
-
-    if (themeContrastBtn) {
-        themeContrastBtn.addEventListener('click', () => {
-            setTheme('contrast');
-            themeContrastBtn.classList.add('active');
-            themeLightBtn.classList.remove('active');
-            themeDarkBtn.classList.remove('active');
-        });
-    }
-
-    // Imposta il pulsante attivo in base al tema corrente
-    if (currentTheme === 'light') themeLightBtn?.classList.add('active');
-    else if (currentTheme === 'dark') themeDarkBtn?.classList.add('active');
-    else if (currentTheme === 'contrast') themeContrastBtn?.classList.add('active');
+    updateThemeBtn();
 
     // Toggle segments visibility button
     const toggleSegmentsBtn = document.getElementById('toggle-segments');
@@ -2282,6 +2491,40 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // Event delegation per la lista segmenti (sostituisce i listener individuali)
+    if (segmentsList) {
+        segmentsList.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (btn) {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                if (btn.dataset.action === 'select') {
+                    selectSegmentById(id);
+                    showToast(`Selezionato: ${segments.find(s => s.id === id)?.name || ''}`, 'info');
+                } else if (btn.dataset.action === 'delete') {
+                    deleteSegment(segments.find(s => s.id === id));
+                }
+                return;
+            }
+            const item = e.target.closest('.list-group-item[data-id]');
+            if (item) {
+                selectSegmentById(parseInt(item.dataset.id));
+            }
+        });
+
+        segmentsList.addEventListener('focusout', (e) => {
+            const nameEl = e.target.closest('.segment-name[data-seg-id]');
+            if (!nameEl) return;
+            const id = parseInt(nameEl.dataset.segId);
+            const seg = segments.find(s => s.id === id);
+            if (!seg) return;
+            const idx = segments.indexOf(seg);
+            seg.name = nameEl.textContent.trim() || (seg.type === 'circle' ? `Cerchio ${idx + 1}` : `Segmento ${idx + 1}`);
+            nameEl.textContent = seg.name;
+            updateMeasurement();
+        });
+    }
+
     // Scale inputs
     const scaleElement = document.getElementById('scale');
     const realElement = document.getElementById('real');
@@ -2315,7 +2558,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const resetElement = document.getElementById('reset');
     const centerElement = document.getElementById('center');
 
-    if (undoBtn) undoBtn.addEventListener('click', undoLastSegment);
+    if (undoBtn) undoBtn.addEventListener('click', undo);
+    const redoBtn = document.getElementById('redo-btn');
+    if (redoBtn) redoBtn.addEventListener('click', redo);
     if (deleteAllElement) deleteAllElement.addEventListener('click', deleteAllSegments);
     if (zoomInElement) zoomInElement.addEventListener('click', zoomIn);
     if (zoomOutElement) zoomOutElement.addEventListener('click', zoomOut);
@@ -2323,6 +2568,30 @@ document.addEventListener("DOMContentLoaded", function() {
     if (centerElement) centerElement.addEventListener('click', resetView);
     
     
+    // Zoom con rotella del mouse, centrato sul cursore
+    canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const delta = event.deltaY < 0 ? 0.2 : -0.2;
+        const newZoom = Math.max(0.5, Math.min(5, zoomFactor + delta));
+        if (newZoom === zoomFactor) return;
+
+        // Mantieni fisso il punto sotto il cursore:
+        // imgX_new = cssX * (1/newZoom - 1/zoomFactor) + imgX
+        const rect = canvas.getBoundingClientRect();
+        const cssX = event.clientX - rect.left;
+        const cssY = event.clientY - rect.top;
+        const factor = 1 / newZoom - 1 / zoomFactor;
+        imgX = cssX * factor + imgX;
+        imgY = cssY * factor + imgY;
+        panX = imgX - centerX;
+        panY = imgY - centerY;
+
+        zoomFactor = newZoom;
+        scheduleRedraw();
+        updateZoomLevel();
+        saveStateDebounced(700);
+    }, { passive: false });
+
     // Resize canvas on window resize
     window.addEventListener('resize', () => {
         resizeCanvas();
@@ -2338,13 +2607,15 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Listener per tasto ESC - annulla disegno corrente
-    // Listener per Ctrl+Z / Cmd+Z - undo ultimo segmento
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' || event.key === 'Esc') {
             cancelCurrentDrawing();
-        } else if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-            event.preventDefault(); // Previeni il comportamento predefinito del browser
-            undoLastSegment();
+        } else if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            undo();
+        } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+            event.preventDefault();
+            redo();
         }
     });
 
@@ -2416,9 +2687,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const helpTitle = document.getElementById('help-title');
     const helpContentIt = document.getElementById('help-content-it');
     const helpContentEn = document.getElementById('help-content-en');
-    const helpCloseBtn = document.getElementById('help-close-btn');
-
     let currentLang = 'it'; // Default to Italian
+
+    const helpCloseLabelIt = document.getElementById('help-close-label-it');
+    const helpCloseLabelEn = document.getElementById('help-close-label-en');
 
     if (langToggle) {
         langToggle.addEventListener('click', () => {
@@ -2426,7 +2698,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Switch to English
                 currentLang = 'en';
                 helpTitle.textContent = 'Help & Information';
-                helpCloseBtn.textContent = 'Close';
+                helpCloseLabelIt.classList.add('d-none');
+                helpCloseLabelEn.classList.remove('d-none');
                 langToggle.innerHTML = '<i class="fas fa-language"></i> IT';
                 helpContentIt.classList.add('d-none');
                 helpContentEn.classList.remove('d-none');
@@ -2434,7 +2707,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Switch to Italian
                 currentLang = 'it';
                 helpTitle.textContent = 'Guida & Informazioni';
-                helpCloseBtn.textContent = 'Chiudi';
+                helpCloseLabelIt.classList.remove('d-none');
+                helpCloseLabelEn.classList.add('d-none');
                 langToggle.innerHTML = '<i class="fas fa-language"></i> EN';
                 helpContentEn.classList.add('d-none');
                 helpContentIt.classList.remove('d-none');
@@ -2475,6 +2749,86 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+
+    // Rotazione immagine
+    const rotationSlider = document.getElementById('rotation-slider');
+    const rotationInput = document.getElementById('rotation-input');
+
+    function applyRotation(deg) {
+        imageRotation = Math.max(0, Math.min(360, deg));
+        if (rotationSlider) rotationSlider.value = imageRotation;
+        if (rotationInput) rotationInput.value = imageRotation;
+        drawCanvas();
+        saveStateDebounced(600);
+    }
+
+    if (rotationSlider) {
+        rotationSlider.addEventListener('input', e => applyRotation(parseInt(e.target.value)));
+    }
+    if (rotationInput) {
+        rotationInput.addEventListener('input', e => {
+            const v = parseInt(e.target.value);
+            if (!isNaN(v)) applyRotation(v);
+        });
+        rotationInput.addEventListener('blur', e => {
+            const v = parseInt(e.target.value);
+            applyRotation(isNaN(v) ? 0 : v);
+        });
+    }
+
+    const rotationResetBtn = document.getElementById('rotation-reset');
+    if (rotationResetBtn) {
+        rotationResetBtn.addEventListener('click', () => applyRotation(0));
+    }
+
+    // Griglia di riferimento
+    const gridToggle = document.getElementById('grid-toggle');
+    const gridTypeEl = document.getElementById('grid-type');
+    const gridCustomInputs = document.getElementById('grid-custom-inputs');
+    const gridColsEl = document.getElementById('grid-cols');
+    const gridRowsEl = document.getElementById('grid-rows');
+    const gridOpacityEl = document.getElementById('grid-opacity');
+    const gridColorEl = document.getElementById('grid-color');
+
+    if (gridToggle) {
+        gridToggle.addEventListener('change', e => { gridEnabled = e.target.checked; drawCanvas(); updateMeasurement(); });
+    }
+    if (gridTypeEl) {
+        gridTypeEl.addEventListener('change', e => {
+            gridType = e.target.value;
+            if (gridCustomInputs) gridCustomInputs.classList.toggle('d-none', gridType !== 'custom');
+            drawCanvas(); updateMeasurement();
+        });
+    }
+    if (gridColsEl) gridColsEl.addEventListener('input', e => { gridCustomCols = parseInt(e.target.value) || 4; drawCanvas(); updateMeasurement(); });
+    if (gridOpacityEl) gridOpacityEl.addEventListener('input', e => { gridOpacity = parseFloat(e.target.value); drawCanvas(); });
+    if (gridColorEl) gridColorEl.addEventListener('input', e => { gridColor = e.target.value; drawCanvas(); });
+
+    // Export
+    const exportCsvBtn = document.getElementById('export-csv');
+    const exportImgBtn = document.getElementById('export-img');
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportMeasurementsCSV);
+    if (exportImgBtn) exportImgBtn.addEventListener('click', exportImageWithOverlay);
+
+    // Drag & Drop
+    const canvasContainer = document.querySelector('.canvas-container');
+    document.body.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (canvasContainer) canvasContainer.classList.add('drag-over');
+    });
+    document.body.addEventListener('dragleave', e => {
+        if (!e.relatedTarget || !document.body.contains(e.relatedTarget)) {
+            if (canvasContainer) canvasContainer.classList.remove('drag-over');
+        }
+    });
+    document.body.addEventListener('drop', e => {
+        e.preventDefault();
+        if (canvasContainer) canvasContainer.classList.remove('drag-over');
+        const file = e.dataTransfer?.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            loadImage({ target: { files: [file] } });
+        }
+    });
 
     // Initialize
     resizeCanvas();
