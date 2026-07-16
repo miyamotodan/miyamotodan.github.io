@@ -4,378 +4,367 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Miyamotodan Home</title>
-    <meta name="description" content="Portfolio Template for Developer" />
+    <title>Miyamotodan — Home</title>
+    <meta name="description" content="Portfolio personale di Miyamotodan — SME e Team Leader su data-governance e Semantic Web." />
 
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/utilities.css" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Kalam:wght@700&family=Patrick+Hand&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
-    <header class="header">
-      <div class="header__content">
-        <div class="header__logo-container">
-          <div class="header__logo-img-cont">
-            <img
-              src="./assets/jpeg/5948419.jpeg"
-              alt="Miyamotodan Logo Image"
-              class="header__logo-img"
-            />
-          </div>
-          <span class="header__logo-sub">Miyamotodan</span>
-        </div>
-        <div class="header__main">
-          <ul class="header__links">
-            <li class="header__link-wrapper">
-              <a href="./index.html" class="header__link"> Home </a>
-            </li>
-            <li class="header__link-wrapper">
-              <a href="./index.html#about" class="header__link">About </a>
-            </li>
-            <li class="header__link-wrapper">
-              <a href="./index.html#projects" class="header__link">
-                Personal Projects
-              </a>
-            </li>
-            <li class="header__link-wrapper">
-              <a href="./index.html#contact" class="header__link">
-                Contact
-              </a>
-            </li>
-          </ul>
-          <div class="header__main-ham-menu-cont">
-            <img
-              src="./assets/svg/ham-menu.svg"
-              alt="hamburger menu"
-              class="header__main-ham-menu"
-            />
-            <img
-              src="./assets/svg/ham-menu-close.svg"
-              alt="hamburger menu close"
-              class="header__main-ham-menu-close d-none"
-            />
-          </div>
-        </div>
+    <a class="nd-skip-link" href="#main">Skip to content</a>
+
+    <header class="nd-header">
+      <div class="nd-container nd-header__inner">
+        <a href="index.html" class="nd-logo">
+          <img src="assets/profile.jpeg" alt="Miyamotodan" class="nd-logo__img" />
+          <span class="nd-logo__text">Miyamotodan</span>
+        </a>
+
+        <nav class="nd-nav" aria-label="Primary">
+          <a href="index.html" class="nd-nav__link">Home</a>
+          <a href="index.html#about" class="nd-nav__link">About</a>
+          <a href="index.html#projects" class="nd-nav__link">Projects</a>
+          <a href="index.html#contact" class="nd-nav__link">Contact</a>
+        </nav>
+
+        <button
+          class="nd-menu-btn"
+          id="nd-menu-btn"
+          type="button"
+          aria-label="Toggle menu"
+          aria-expanded="false"
+          aria-controls="nd-mobile-nav"
+        >
+          <span></span><span></span><span></span>
+        </button>
       </div>
-      <div class="header__sm-menu">
-        <div class="header__sm-menu-content">
-          <ul class="header__sm-menu-links">
-            <li class="header__sm-menu-link">
-              <a href="./index.html"> Home </a>
-            </li>
 
-            <li class="header__sm-menu-link">
-              <a href="./index.html#about"> About </a>
-            </li>
-
-            <li class="header__sm-menu-link">
-              <a href="./index.html#projects"> Personl Projects </a>
-            </li>
-
-            <li class="header__sm-menu-link">
-              <a href="./index.html#contact"> Contact </a>
-            </li>
-          </ul>
-        </div>
-      </div>
+      <nav class="nd-mobile-nav" id="nd-mobile-nav" aria-label="Mobile">
+        <a href="index.html" class="nd-mobile-nav__link">Home</a>
+        <a href="index.html#about" class="nd-mobile-nav__link">About</a>
+        <a href="index.html#projects" class="nd-mobile-nav__link">Projects</a>
+        <a href="index.html#contact" class="nd-mobile-nav__link">Contact</a>
+      </nav>
     </header>
-    <section class="home-hero">
-      <div class="home-hero__content">
-        <h1 class="heading-primary">Hey, My name is Miyamotodan</h1>
-        <div class="home-hero__info">
-          <p class="text-primary">
-            A SME and Team Leader with a passion for data-governance, data-integration, and creating solutions for complex problems. Currently leading the 'Open Data & Semantic Web' practice at a big company.
-          </p>
-        </div>
-        <div class="home-hero__cta">
-          <a href="./#projects" class="btn btn--bg">Personal Projects</a>
-        </div>
-      </div>
-      <div class="home-hero__socials">
-        <div class="home-hero__social">
-          <a href="#" class="home-hero__social-icon-link">
-            <img
-              src="./assets/png/linkedin-ico.png"
-              alt="icon"
-              class="home-hero__social-icon"
-            />
-          </a>
-        </div>
-        <div class="home-hero__social">
-          <a href="https://github.com/miyamotodan" class="home-hero__social-icon-link" target="_blank">
-            <img
-              src="./assets/png/github-ico.png"
-              alt="icon"
-              class="home-hero__social-icon"
-            />
-          </a>
-        </div>
-        <div class="home-hero__social">
-          <a href="https://x.com/miyamotodan" class="home-hero__social-icon-link" target="_blank">
-            <img
-              src="./assets/png/twitter-x-ico.png"
-              alt="icon"
-              class="home-hero__social-icon"
-            />
-          </a>
-        </div>
-        <div class="home-hero__social">
-          <a href="https://www.youtube.com/miyamotodan" class="home-hero__social-icon-link" target="_blank">
-            <img
-              src="./assets/png/yt-ico.png"
-              alt="icon"
-              class="home-hero__social-icon"
-            />
-          </a>
-        </div>
-        <div class="home-hero__social">
-          <a href="https://www.instagram.com/miyamotodan" class="home-hero__social-icon-link home-hero__social-icon-link--bd-none" target="_blank">
-            <img
-              src="./assets/png/insta-ico.png"
-              alt="icon"
-              class="home-hero__social-icon"
-            />
-          </a>
-        </div>
-      </div>
-      <div class="home-hero__mouse-scroll-cont">
-        <div class="mouse"></div>
-      </div>
-    </section>
-    <section id="about" class="about sec-pad">
-      <div class="main-container">
-        <h2 class="heading heading-sec heading-sec__mb-med">
-          <span class="heading-sec__main">About Me</span>
-          <span class="heading-sec__sub">
-            As a SME and Team Leader, I have been involved in data-governance and data-integration initiatives based on Semantic Technologies for central and local public administration clients.
-          </span>
-        </h2>
-        <div class="about__content">
-          <div class="about__content-main">
-            <h3 class="about__content-title">Get to know me!</h3>
-            <div class="about__content-details">
-              <p class="about__content-details-para" style="text-align: justify;">
-                It's
-                <strong>Miyamotodan</strong>
-                Hey there! I'm a SME (Subject Matter Expert) and Team Leader based in <strong>Rome</strong>.
-                My experience centers on managing complex remote projects, specifically initiatives involving <strong>Open Data and Linked Open Data</strong> for public administration clients. 
-                I have solid expertise in Object-Oriented (OO) analysis and development, proficiently utilizing models such as UML, Entity-Relationship (ER) Diagrams, and OWL.
-              </p>
-              <p class="about__content-details-para" style="text-align: justify;" >
-                I currently lead the "<strong>Open Data & Semantic Web</strong>" practice. 
-                I enjoy experimenting with web programming to create interfaces and services that explore and visualize <strong>Knowledge Graphs</strong>. 
-                My curiosity for technology has led me, over the years, to use and analyze hundreds of web and mobile applications across various industries and verticals.
-              </p>
-              <p class="about__content-details-para" style="text-align: justify;">
-                Beyond technology, I cultivate a deep passion for <strong>Martial Arts and Eastern Culture</strong>, a journey spanning over three decades. 
-                You can discover more about my martial arts path <a href="./martial-arts.html" style="color: #0062b9; font-weight: 700;">here</a>.
-              </p>
-              <p class="about__content-details-para">
-                Feel free to <strong>contact</strong> me here.
-              </p>
-            </div>
-            <a href="./#contact" class="btn btn--med btn--theme dynamicBgClr"
-              >Contact</a
-            >
-          </div>
-          <div class="about__content-skills">
-            <h3 class="about__content-title">My Skills</h3>
-            <div class="skills">
-              <div class="skills__skill">Windows</div>
-              <div class="skills__skill">Linux</div>
-              <div class="skills__skill">GUI</div>
-              <div class="skills__skill">CLI</div>
-              <div class="skills__skill">SQL</div>
-              <div class="skills__skill">JavaScript</div>
-              <div class="skills__skill">Java</div>
-              <div class="skills__skill">NodeJS</div>
-              <div class="skills__skill">Svelte</div>
-              <div class="skills__skill">Web Development</div>
-              <div class="skills__skill">Semantic Web</div>
-              <div class="skills__skill">Linked Data</div>
-              <div class="skills__skill">RDF</div>
-              <div class="skills__skill">Sparql</div>
-              <div class="skills__skill">TripleStores</div>
-              <div class="skills__skill">LLM/VibeCoding</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <section id="projects" class="projects sec-pad">
-      <div class="main-container">
-        <h2 class="heading heading-sec heading-sec__mb-bg">
-          <span class="heading-sec__main">Personal Projects</span>
-          <span class="heading-sec__sub">
-            This section lists some of my personal projects done as hobbies unrelated to my professional activity, projects for personal productivity or for fun.
-          </span>
-        </h2>
 
-        <div class="projects__content">
-          <div class="projects__row">
-            <div class="projects__row-img-cont" style="position: relative;">
-              <img
-                src="./assets/jpeg/project-mockup-example.jpeg"
-                alt="Project Mockup"
-                class="projects__row-img"
-                loading="lazy"
-              />
-              <img
-                src="./assets/png/imgemeasure.png"
-                alt="Software Screenshot"
-                style="position: absolute; top: 20%; left: 15.5%; width: 69%;"
-                class="projects__row-img"
-                loading="lazy"
-              />
-            </div>
-            <div class="projects__row-content">
-              <h3 class="projects__row-content-title">IMG MEASURE</h3>
-              <p class="projects__row-content-desc">
-                Tool for measuring distances in an image to report them on paper to scale.
-              </p>
-              <a
-                href="./project-1.html"
-                class="btn btn--med btn--theme dynamicBgClr"
-                target="_blank"
-                >Case Study</a
+    <main id="main">
+      <!-- Hero -->
+      <section class="nd-hero">
+        <div class="nd-hero__inner">
+          <div class="nd-hero__content">
+            <span class="nd-tag nd-rotate--1">Hey there 👋</span>
+            <h1 class="nd-hero__title">
+              My name is <span class="nd-highlight">Miyamotodan</span
+              ><span class="nd-bang" aria-hidden="true">!</span>
+            </h1>
+            <p class="nd-hero__lede">
+              A SME and Team Leader with a passion for data-governance, data-integration, and
+              creating solutions for complex problems. Currently leading the "Open Data &amp;
+              Semantic Web" practice at a big company.
+            </p>
+            <div class="nd-hero__actions">
+              <a href="#projects" class="nd-btn nd-btn--primary">See my projects</a>
+              <svg
+                class="nd-hero__arrow nd-hide-mobile"
+                viewBox="0 0 120 90"
+                fill="none"
+                aria-hidden="true"
               >
+                <path
+                  d="M8 8 C 45 -2, 68 42, 98 68"
+                  stroke="#2d2d2d"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-dasharray="1 9"
+                />
+                <path
+                  d="M86 60 L98 68 L88 80"
+                  stroke="#2d2d2d"
+                  stroke-width="2.5"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </div>
+            <ul class="nd-social" aria-label="Social links">
+              <li>
+                <a href="https://www.linkedin.com/in/daniele-del-pinto-681025/" class="nd-social__link" aria-label="LinkedIn" target="_blank" rel="noreferrer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                    <rect width="4" height="12" x="2" y="9" />
+                    <circle cx="4" cy="4" r="2" />
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="https://github.com/miyamotodan" class="nd-social__link" aria-label="GitHub" target="_blank" rel="noreferrer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                    <path d="M9 18c-4.51 2-5-2-7-2" />
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="https://x.com/miyamotodan" class="nd-social__link" aria-label="X (Twitter)" target="_blank" rel="noreferrer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 5l14 14M19 5L5 19" />
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.youtube.com/miyamotodan" class="nd-social__link" aria-label="YouTube" target="_blank" rel="noreferrer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+                    <path d="m10 15 5-3-5-3z" />
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/miyamotodan" class="nd-social__link" aria-label="Instagram" target="_blank" rel="noreferrer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                  </svg>
+                </a>
+              </li>
+            </ul>
           </div>
 
-          <div class="projects__row">
-            <div class="projects__row-img-cont" style="position: relative;">
-              <img
-                src="./assets/jpeg/project-mockup-example.jpeg"
-                alt="Software Screenshot"
-                class="projects__row-img"
-                loading="lazy"
-              />
-              <img src="./assets/png/newsletter.png" alt="Software Screenshot" style="position: absolute; top: 20%; left: 15.5%; width: 69%;" class="projects__row-img" loading="lazy"/>
-            </div>
-            <div class="projects__row-content">
-              <h3 class="projects__row-content-title">NEWSLETTER</h3>
-              <p class="projects__row-content-desc">
-                Tool for making a newsletter with two kind of post (single and double column).
-              </p>
-              <a
-                href="./project-2.html"
-                class="btn btn--med btn--theme dynamicBgClr"
-                target="_blank"
-                >Case Study</a
+          <div class="nd-hero__media">
+            <div class="nd-hero__media-frame">
+              <svg
+                class="nd-hero__scene"
+                viewBox="0 0 480 360"
+                fill="none"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
               >
-            </div>
-          </div>
+                <path d="M0,90 C60,88 120,95 170,120 C210,140 240,158 278,168" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round" />
+                <path d="M0,180 C70,176 140,183 200,179 C230,177 255,179 278,180" stroke="#2d5da1" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10" />
+                <path d="M0,270 C60,272 120,262 170,238 C205,220 245,200 278,192" stroke="#6b6558" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="1 6" />
 
-        <!--
-          <div class="projects__row">
-            <div class="projects__row-img-cont">
-              <img
-                src="./assets/jpeg/project-mockup-example.jpeg"
-                alt="Software Screenshot"
-                class="projects__row-img"
-                loading="lazy"
-              />
-            </div>
-            <div class="projects__row-content">
-              <h3 class="projects__row-content-title">Project 3</h3>
-              <p class="projects__row-content-desc">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic
-                facilis tempora, explicabo quae quod deserunt eius sapiente
-                praesentium.
-              </p>
-              <a
-                href="./project-3.html"
-                class="btn btn--med btn--theme dynamicBgClr"
-                target="_blank"
-                >Case Study</a
-              >
+                <path d="M279,152 C283,150 300,151 304,155 C307,175 306,195 303,206 C298,209 282,208 278,205 C275,188 276,168 279,152 Z" fill="#fdfbf7" stroke="#2d2d2d" stroke-width="3" />
+                <path d="M285,180 L292,189 L300,167" stroke="#ff4d4d" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+
+                <path class="nd-hero__flow-output" d="M304,180 C340,178 380,182 420,179 C440,178 460,180 480,179" stroke="#ff4d4d" stroke-width="3.5" stroke-linecap="round" />
+
+                <circle cx="345" cy="95" r="15" fill="none" stroke="#2d2d2d" stroke-width="3" />
+                <path d="M322,150 C325,128 335,116 345,113 C355,116 365,128 368,150" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round" />
+                <path d="M330,122 C315,132 300,142 288,155" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round" />
+              </svg>
             </div>
           </div>
-          -->
         </div>
-      </div>
-    </section>
-    <section id="contact" class="contact sec-pad dynamicBg">
-      <div class="main-container">
-        <h2 class="heading heading-sec heading-sec__mb-med">
-          <span class="heading-sec__main heading-sec__main--lt">Contact</span>
-          <span class="heading-sec__sub heading-sec__sub--lt">
-            Get in touch with me here.
-          </span>
-        </h2>
-        <div class="contact__form-container" style="text-align: center;">
-          <a href="mailto:miyamotodan@hotmail.com" class="btn btn--med btn--theme dynamicBgClr">miyamotodan@hotmail.com</a>
+
+        <div class="nd-hero__scroll-hint" aria-hidden="true">
+          <div class="nd-mouse"></div>
         </div>
-      </div>
-    </section>
-    <footer class="main-footer">
-      <div class="main-container">
-        <div class="main-footer__upper">
-          <div class="main-footer__row main-footer__row-1">
-            <h2 class="heading heading-sm main-footer__heading-sm">
-              <span>Social</span>
-            </h2>
-            <div class="main-footer__social-cont">
-              <a target="_blank" rel="noreferrer" href="#">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/linkedin-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://github.com/miyamotodan">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/github-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://x.com/miyamotodan">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/twitter-x-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://www.youtube.com/miyamotodan">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/yt-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://www.instagram.com/miyamotodan">
-                <img
-                  class="main-footer__icon main-footer__icon--mr-none"
-                  src="./assets/png/insta-ico.png"
-                  alt="icon"
-                />
-              </a>
-            </div>
-          </div>
-          <div class="main-footer__row main-footer__row-2">
-            <h4 class="heading heading-sm text-lt">Miyamotodan</h4>
-            <p class="main-footer__short-desc">
-              A SME and Team Leader with a passion for data-governance and data-integration.
+      </section>
+
+      <!-- About -->
+      <section id="about" class="nd-section">
+        <div class="nd-container">
+          <div class="nd-section__head">
+            <span class="nd-tag nd-tag--accent nd-rotate--2">About Me</span>
+            <h2 class="nd-section__title">A closer look at what I do</h2>
+            <p class="nd-section__sub">
+              As a SME and Team Leader, I have been involved in data-governance and
+              data-integration initiatives based on Semantic Technologies for central and local
+              public administration clients.
             </p>
           </div>
-        </div>
 
-        <!-- If you give me some credit or shoutout here by linking to my website, then it will be a big thing for me and will help me a lot :) -->
-        <div class="main-footer__lower">
-          &copy; Copyright 2021. Made by
-          <a rel="noreferrer" target="_blank" href="https://rammaheshwari.com"
-            >Ram Maheshwari</a
-          >
+          <div class="nd-about__grid">
+            <div class="nd-card nd-card--tape nd-rotate--3">
+              <h3 class="nd-card__title">Get to know me!</h3>
+              <p>
+                It's <strong>Miyamotodan</strong>. Hey there! I'm a SME (Subject Matter Expert)
+                and Team Leader based in <strong>Rome</strong>. My experience centers on managing
+                complex remote projects, specifically initiatives involving
+                <strong>Open Data and Linked Open Data</strong> for public administration
+                clients. I have solid expertise in Object-Oriented (OO) analysis and development,
+                proficiently utilizing models such as UML, Entity-Relationship (ER) Diagrams, and
+                OWL.
+              </p>
+              <p>
+                I currently lead the "<strong>Open Data &amp; Semantic Web</strong>" practice. I
+                enjoy experimenting with web programming to create interfaces and services that
+                explore and visualize <strong>Knowledge Graphs</strong>. My curiosity for
+                technology has led me, over the years, to use and analyze hundreds of web and
+                mobile applications across various industries and verticals.
+              </p>
+              <p>
+                Beyond technology, I cultivate a deep passion for
+                <strong>Martial Arts and Eastern Culture</strong>, a journey spanning over three
+                decades. You can discover more about my martial arts path
+                <a href="martial-arts.html" class="nd-link">here</a>.
+              </p>
+              <p>Feel free to <strong>contact</strong> me here.</p>
+              <a href="#contact" class="nd-btn nd-btn--secondary">Contact</a>
+            </div>
+
+            <div class="nd-card nd-card--tack nd-rotate--4">
+              <h3 class="nd-card__title">My Skills</h3>
+              <div class="nd-tags">
+                <span class="nd-tag">Windows</span>
+                <span class="nd-tag">Linux</span>
+                <span class="nd-tag">GUI</span>
+                <span class="nd-tag">CLI</span>
+                <span class="nd-tag">SQL</span>
+                <span class="nd-tag">JavaScript</span>
+                <span class="nd-tag">Java</span>
+                <span class="nd-tag">NodeJS</span>
+                <span class="nd-tag">Svelte</span>
+                <span class="nd-tag">Web Development</span>
+                <span class="nd-tag">Semantic Web</span>
+                <span class="nd-tag">Linked Data</span>
+                <span class="nd-tag">RDF</span>
+                <span class="nd-tag">Sparql</span>
+                <span class="nd-tag">TripleStores</span>
+                <span class="nd-tag">LLM/VibeCoding</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects -->
+      <section id="projects" class="nd-section nd-section--muted">
+        <div class="nd-container">
+          <div class="nd-section__head">
+            <span class="nd-tag nd-rotate--1">Personal Projects</span>
+            <h2 class="nd-section__title">Things I've built for fun</h2>
+            <p class="nd-section__sub">
+              This section lists some of my personal projects done as hobbies unrelated to my
+              professional activity, projects for personal productivity or for fun.
+            </p>
+          </div>
+
+          <div class="nd-projects__grid">
+            <article class="nd-project-card">
+              <div class="nd-project-card__media">
+                <img
+                  src="assets/imgmeasure-screenshot.png"
+                  alt="Screenshot dello strumento IMG MEASURE"
+                  loading="lazy"
+                />
+              </div>
+              <div class="nd-project-card__body">
+                <h3 class="nd-project-card__title">IMG MEASURE</h3>
+                <p class="nd-project-card__desc">
+                  Tool for measuring distances in an image to report them on paper to scale.
+                </p>
+                <a href="project-1.html" class="nd-btn nd-btn--primary" target="_blank"
+                  >Case Study</a
+                >
+              </div>
+            </article>
+
+            <article class="nd-project-card">
+              <div class="nd-project-card__media">
+                <img
+                  src="assets/newsletter-screenshot.png"
+                  alt="Screenshot dello strumento NEWSLETTER"
+                  loading="lazy"
+                />
+              </div>
+              <div class="nd-project-card__body">
+                <h3 class="nd-project-card__title">NEWSLETTER</h3>
+                <p class="nd-project-card__desc">
+                  Tool for making a newsletter with two kind of post (single and double column).
+                </p>
+                <a href="project-2.html" class="nd-btn nd-btn--primary" target="_blank"
+                  >Case Study</a
+                >
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section id="contact" class="nd-section">
+        <div class="nd-container nd-contact__inner">
+          <div class="nd-postit nd-rotate--1">
+            <h2>Contact</h2>
+            <p>Get in touch with me here.</p>
+            <a href="mailto:miyamotodan@hotmail.com" class="nd-btn nd-btn--primary"
+              >miyamotodan@hotmail.com</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="nd-footer">
+      <div class="nd-container nd-footer__inner">
+        <div>
+          <h4 class="nd-footer__heading">Miyamotodan</h4>
+          <p class="nd-footer__desc">
+            A SME and Team Leader with a passion for data-governance and data-integration.
+          </p>
+        </div>
+        <div>
+          <h4 class="nd-footer__heading">Social</h4>
+          <ul class="nd-social" style="margin-top: 1rem;" aria-label="Social links">
+            <li>
+              <a href="https://www.linkedin.com/in/daniele-del-pinto-681025/" class="nd-social__link" aria-label="LinkedIn" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                  <rect width="4" height="12" x="2" y="9" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/miyamotodan" class="nd-social__link" aria-label="GitHub" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                  <path d="M9 18c-4.51 2-5-2-7-2" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/miyamotodan" class="nd-social__link" aria-label="X (Twitter)" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 5l14 14M19 5L5 19" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.youtube.com/miyamotodan" class="nd-social__link" aria-label="YouTube" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+                  <path d="m10 15 5-3-5-3z" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.instagram.com/miyamotodan" class="nd-social__link" aria-label="Instagram" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                </svg>
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
+      <p class="nd-footer__copy">&copy; 2026 Miyamotodan. Sketched with care.</p>
     </footer>
 
-    <script src="./index.js"></script>
+    <script src="js/main.js"></script>
   </body>
 </html>

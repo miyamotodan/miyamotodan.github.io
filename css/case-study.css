@@ -1,0 +1,142 @@
+/* Components used only on sub-pages (martial arts journey, project case
+   studies) — kept out of components.css so the home page doesn't pay for
+   styles it never uses. */
+
+/* ---------- Page hero (shorter than the home hero) ---------- */
+.nd-page-hero {
+  padding-block: clamp(3rem, 7vw, 5rem) clamp(2.5rem, 5vw, 3.5rem);
+  border-bottom: 3px dashed var(--color-border);
+  text-align: center;
+}
+.nd-page-hero__inner {
+  max-width: var(--max-width-narrow);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+.nd-page-hero__title {
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+}
+.nd-page-hero__lede {
+  font-size: 1.25rem;
+  max-width: 46ch;
+}
+
+/* ---------- Prose blocks (long-form text reads better unboxed) ---------- */
+.nd-prose {
+  max-width: var(--max-width-narrow);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+}
+.nd-prose__block h3 {
+  font-size: 1.75rem;
+  display: inline-block;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--color-accent-2);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  margin-bottom: 0.9rem;
+}
+.nd-prose__block p {
+  font-size: 1.15rem;
+  line-height: 1.65;
+}
+.nd-prose__images {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin-block: 1.5rem;
+}
+
+/* ---------- Showcase "polaroid" image frame ---------- */
+.nd-showcase {
+  width: min(100%, 560px);
+  margin-inline: auto;
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-wobbly-lg);
+  box-shadow: var(--shadow-lg);
+  background: var(--color-surface);
+  padding: 0.85rem 0.85rem 1.5rem;
+}
+.nd-showcase img {
+  width: 100%;
+  display: block;
+  border-radius: 14px;
+  border: 2px solid var(--color-border);
+}
+.nd-showcase--sm {
+  width: min(100%, 420px);
+  box-shadow: var(--shadow-md);
+}
+.nd-showcase__caption {
+  text-align: center;
+  margin-top: 0.6rem;
+  margin-bottom: 0;
+  font-size: 1rem;
+  color: var(--color-muted-ink);
+}
+
+/* ---------- Timeline (martial arts journey) ---------- */
+.nd-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-left: 2.25rem;
+  border-left: 3px dashed var(--color-border);
+  margin-left: 0.5rem;
+}
+.nd-timeline__item {
+  position: relative;
+}
+.nd-timeline__dot {
+  position: absolute;
+  left: -2.62rem;
+  top: 0.35rem;
+  width: 18px;
+  height: 18px;
+  background: var(--color-accent);
+  border: 2.5px solid var(--color-border);
+  border-radius: 50%;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+}
+.nd-timeline__period {
+  margin-block: 0.6rem 1rem;
+}
+.nd-timeline__image {
+  width: min(100%, 260px);
+  margin: 0.25rem auto 1.1rem;
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-wobbly-md-alt);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.nd-timeline__image img {
+  width: 100%;
+  display: block;
+}
+@media (min-width: 768px) {
+  .nd-timeline {
+    padding-left: 3rem;
+    margin-left: 1rem;
+  }
+  .nd-timeline__dot {
+    left: -3.39rem;
+    top: 0.45rem;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ---------- Simple back-link row ---------- */
+.nd-back-row {
+  text-align: center;
+  margin-top: 4.5rem;
+}

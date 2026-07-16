@@ -1,0 +1,76 @@
+/* Small, composable helpers — the hand-rolled equivalent of Tailwind utilities,
+   kept intentionally short since there's no build step to purge unused ones. */
+
+.nd-container {
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+.nd-container--narrow {
+  max-width: var(--max-width-narrow);
+}
+
+.nd-section {
+  padding-block: var(--section-pad-y);
+}
+
+.nd-section--muted {
+  background-color: var(--color-muted);
+  background-image: radial-gradient(rgba(45, 45, 45, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Deliberate off-grid rotation — applied to cards/media/tags to break the grid */
+.nd-rotate--1 {
+  transform: rotate(-1.5deg);
+}
+.nd-rotate--2 {
+  transform: rotate(2deg);
+}
+.nd-rotate--3 {
+  transform: rotate(-1deg);
+}
+.nd-rotate--4 {
+  transform: rotate(1.25deg);
+}
+
+@media (min-width: 768px) {
+  .nd-hide-mobile {
+    display: block;
+  }
+}
+.nd-hide-mobile {
+  display: none;
+}
+
+.nd-show-mobile-only {
+  display: block;
+}
+@media (min-width: 768px) {
+  .nd-show-mobile-only {
+    display: none;
+  }
+}
+
+.nd-flex {
+  display: flex;
+}
+.nd-flex-wrap {
+  flex-wrap: wrap;
+}
+.nd-items-center {
+  align-items: center;
+}
+.nd-justify-between {
+  justify-content: space-between;
+}
+.nd-gap-sm {
+  gap: 0.5rem;
+}
+.nd-gap-md {
+  gap: 1rem;
+}
+.nd-gap-lg {
+  gap: 2rem;
+}

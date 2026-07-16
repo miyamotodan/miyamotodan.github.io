@@ -7,329 +7,285 @@
     <title>Martial Arts Journey | Miyamotodan</title>
     <meta name="description" content="A thirty-year journey through martial arts and Eastern culture" />
 
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/case-study.css" />
+    <link rel="stylesheet" href="css/utilities.css" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Kalam:wght@700&family=Patrick+Hand&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
-    <header class="header">
-      <div class="header__content">
-        <div class="header__logo-container">
-          <div class="header__logo-img-cont">
-            <img
-              src="./assets/jpeg/5948419.jpeg"
-              alt="Miyamotodan Logo Image"
-              class="header__logo-img"
-            />
-          </div>
-          <span class="header__logo-sub">Miyamotodan</span>
-        </div>
-        <div class="header__main">
-          <ul class="header__links">
-            <li class="header__link-wrapper">
-              <a href="./index.html" class="header__link"> Home </a>
-            </li>
-            <li class="header__link-wrapper">
-              <a href="./index.html#about" class="header__link">About </a>
-            </li>
-            <li class="header__link-wrapper">
-              <a href="./index.html#projects" class="header__link">
-                Personal Projects
-              </a>
-            </li>
-          </ul>
-          <div class="header__main-ham-menu-cont">
-            <img
-              src="./assets/svg/ham-menu.svg"
-              alt="hamburger menu"
-              class="header__main-ham-menu"
-            />
-            <img
-              src="./assets/svg/ham-menu-close.svg"
-              alt="hamburger menu close"
-              class="header__main-ham-menu-close d-none"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="header__sm-menu">
-        <div class="header__sm-menu-content">
-          <ul class="header__sm-menu-links">
-            <li class="header__sm-menu-link">
-              <a href="./index.html"> Home </a>
-            </li>
+    <a class="nd-skip-link" href="#main">Skip to content</a>
 
-            <li class="header__sm-menu-link">
-              <a href="./index.html#about"> About </a>
-            </li>
+    <header class="nd-header">
+      <div class="nd-container nd-header__inner">
+        <a href="index.html" class="nd-logo">
+          <img src="assets/profile.jpeg" alt="Miyamotodan" class="nd-logo__img" />
+          <span class="nd-logo__text">Miyamotodan</span>
+        </a>
 
-            <li class="header__sm-menu-link">
-              <a href="./index.html#projects"> Personal Projects </a>
-            </li>
-          </ul>
-        </div>
+        <nav class="nd-nav" aria-label="Primary">
+          <a href="index.html" class="nd-nav__link">Home</a>
+          <a href="index.html#about" class="nd-nav__link">About</a>
+          <a href="index.html#projects" class="nd-nav__link">Projects</a>
+          <a href="index.html#contact" class="nd-nav__link">Contact</a>
+        </nav>
+
+        <button
+          class="nd-menu-btn"
+          id="nd-menu-btn"
+          type="button"
+          aria-label="Toggle menu"
+          aria-expanded="false"
+          aria-controls="nd-mobile-nav"
+        >
+          <span></span><span></span><span></span>
+        </button>
       </div>
+
+      <nav class="nd-mobile-nav" id="nd-mobile-nav" aria-label="Mobile">
+        <a href="index.html" class="nd-mobile-nav__link">Home</a>
+        <a href="index.html#about" class="nd-mobile-nav__link">About</a>
+        <a href="index.html#projects" class="nd-mobile-nav__link">Projects</a>
+        <a href="index.html#contact" class="nd-mobile-nav__link">Contact</a>
+      </nav>
     </header>
 
-    <section class="project-cs-hero">
-      <div class="project-cs-hero__content">
-        <h1 class="heading-primary">Martial Arts Journey</h1>
-        <div class="project-cs-hero__info">
-          <p class="text-primary">
-            A thirty-year exploration of martial arts and Eastern philosophy
+    <main id="main">
+      <section class="nd-page-hero">
+        <div class="nd-container nd-page-hero__inner">
+          <span class="nd-tag nd-tag--accent nd-rotate--1">A 30-year journey</span>
+          <h1 class="nd-page-hero__title">Martial Arts Journey</h1>
+          <p class="nd-page-hero__lede">
+            A thirty-year exploration of martial arts and Eastern philosophy.
           </p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="project-details">
-      <div class="project-details__content">
-        <div class="project-details__content-main">
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Introduction</h3>
-            <p class="project-details__desc-para">
-              My martial arts journey began at the age of four and has spanned over three decades,
-              encompassing various disciplines from Japanese and Chinese martial traditions.
-              This path has not only been about physical training but also a deep exploration
-              of Eastern culture, philosophy, and personal development.
-            </p>
-          </div>
-
-          <!-- Judo Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Judo (柔道)</h3>
-            <div class="project-details__showcase-img-cont">
-              <img
-                src="./assets/martial-arts/martial5.png"
-                alt="Judo practice"
-                class="project-details__showcase-img"
-                loading="lazy"
-              />
+      <section class="nd-section">
+        <div class="nd-container">
+          <div class="nd-prose" style="margin-bottom: 3rem;">
+            <div class="nd-prose__block">
+              <h3>Introduction</h3>
+              <p>
+                My martial arts journey began at the age of four and has spanned over three
+                decades, encompassing various disciplines from Japanese and Chinese martial
+                traditions. This path has not only been about physical training but also a deep
+                exploration of Eastern culture, philosophy, and personal development.
+              </p>
             </div>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 1973-1985
-            </p>
-            <p class="project-details__desc-para">
-              I began my martial arts practice at the age of 4 with Judo at Dojo Zen in Rome
-              (zona prenestino labicano). Under the guidance of Masters T. Carmeni and A. Monti,
-              I progressed to brown belt, participating in local and regional competitions.
-            </p>
           </div>
 
-          <!-- Kung Fu - Dae Woung Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Dae Woung</h3>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 1990-1992
-            </p>
-            <p class="project-details__desc-para">
-              I practiced Chinese martial arts with an instructor who was a student of Master Shin.
-              This non-orthodox syncretic style combined elements from Northern Praying Mantis,
-              Shaolin, and Baguazhang.
-            </p>
-          </div>
+          <ul class="nd-timeline">
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--1">
+                <h3 class="nd-card__title">Judo (柔道)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 1973–1985</span>
+                <div class="nd-timeline__image">
+                  <img src="assets/martial-arts/martial5.png" alt="Judo practice" loading="lazy" />
+                </div>
+                <p>
+                  I began my martial arts practice at the age of 4 with Judo at Dojo Zen in Rome
+                  (zona prenestino labicano). Under the guidance of Masters T. Carmeni and A.
+                  Monti, I progressed to brown belt, participating in local and regional
+                  competitions.
+                </p>
+              </div>
+            </li>
 
-          <!-- Sanda Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Sanda (散打)</h3>
-            <div class="project-details__showcase-img-cont">
-              <img
-                src="./assets/martial-arts/martial2.png"
-                alt="Sanda Chinese boxing"
-                class="project-details__showcase-img"
-                loading="lazy"
-              />
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--3">
+                <h3 class="nd-card__title">Kung Fu – Dae Woung</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 1990–1992</span>
+                <p>
+                  I practiced Chinese martial arts with an instructor who was a student of Master
+                  Shin. This non-orthodox syncretic style combined elements from Northern Praying
+                  Mantis, Shaolin, and Baguazhang.
+                </p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--2">
+                <h3 class="nd-card__title">Kung Fu – Sanda (散打)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 1998–2006</span>
+                <div class="nd-timeline__image">
+                  <img src="assets/martial-arts/martial2.png" alt="Sanda Chinese boxing" loading="lazy" />
+                </div>
+                <p>
+                  I trained in Chinese boxing (Sanda) under Master G. Collalti of Master C.
+                  Capaldi's school, who was a student of Choo Kang Sing (Lam Kiun Pak Toi style,
+                  Choo family lineage).
+                </p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--4">
+                <h3 class="nd-card__title">Kung Fu – Qixing Tanglangquan (七星螳螂拳)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 2003–2015</span>
+                <div class="nd-timeline__image">
+                  <img src="assets/martial-arts/martial4.png" alt="Seven Star Praying Mantis" loading="lazy" />
+                </div>
+                <p>
+                  I began training at Master A. Parapetti's school (a student of Master Shin Dae
+                  Woung), practicing the Seven Star Praying Mantis style. The school later merged
+                  with that of Master S. Falanga. I participated in several seminars with Grand
+                  Masters Zhong Lian Bao and Lin Dongzhu.
+                </p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--1">
+                <h3 class="nd-card__title">Kung Fu – Baguazhang Cheng Style (程氏八卦掌)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 2010–2016</span>
+                <div class="nd-timeline__image">
+                  <img src="assets/martial-arts/martial3.png" alt="Baguazhang Eight Trigrams Palm" loading="lazy" />
+                </div>
+                <p>
+                  I practiced with Masters M. Ria and G. Capriglia, learning both a non-orthodox
+                  version of the "Eight Trigrams" style and the orthodox Cheng style. I attended
+                  seminars with Masters Kong Cheng and Han Yan Wu (students of Grand Master Liu
+                  Jing Ru).
+                </p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--3">
+                <h3 class="nd-card__title">Kung Fu – Taichichuan Chen Style (陳式太極拳)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 2017–2019</span>
+                <div class="nd-timeline__image">
+                  <img src="assets/martial-arts/martial1.png" alt="Chen Style Taichichuan" loading="lazy" />
+                </div>
+                <p>I trained with Master Gianna Sabatelli, a disciple of Grand Master Chen Xiaowang.</p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--2">
+                <h3 class="nd-card__title">Kung Fu – Baguazhang Yin Style (尹氏八卦掌)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 2020</span>
+                <p>I studied with Master M. Ria, a disciple of Master Zhao Min Hua in the Yin style.</p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--4">
+                <h3 class="nd-card__title">Kung Fu – Taichichuan Chen Style (陳式太極拳)</h3>
+                <span class="nd-tag nd-timeline__period">Roma, 2023–2025</span>
+                <p>
+                  I currently train with Master Antonella Carrara, a student of Master Fu Neng
+                  Bin, who is a disciple of Grand Master Chen ZhengLei.
+                </p>
+              </div>
+            </li>
+
+            <li class="nd-timeline__item">
+              <span class="nd-timeline__dot" aria-hidden="true"></span>
+              <div class="nd-card nd-rotate--1">
+                <h3 class="nd-card__title">Additional Interests and Training</h3>
+                <p>
+                  Throughout the years, I have also explored Bajiquan (八極拳) and Wu Style
+                  Taijiquan (吳氏太極拳), participating in training seminars with Masters Zu Yao Wu
+                  (for Bajiquan) and Zhao Min Hua (for Taijiquan).
+                </p>
+              </div>
+            </li>
+          </ul>
+
+          <div class="nd-prose" style="margin-top: 3.5rem;">
+            <div class="nd-prose__block">
+              <h3>Philosophy and Practice</h3>
+              <p>
+                This journey through various martial arts has been more than physical
+                training—it has been a continuous exploration of discipline, balance, and the
+                deep philosophical traditions of the East. Each style has contributed unique
+                perspectives on movement, strategy, and the cultivation of both body and mind.
+              </p>
             </div>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 1998-2006
-            </p>
-            <p class="project-details__desc-para">
-              I trained in Chinese boxing (Sanda) under Master G. Collalti of Master C. Capaldi's school,
-              who was a student of Choo Kang Sing (Lam Kiun Pak Toi style, Choo family lineage).
-            </p>
           </div>
 
-          <!-- Praying Mantis Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Qixing Tanglangquan (七星螳螂拳)</h3>
-            <div class="project-details__showcase-img-cont">
-              <img
-                src="./assets/martial-arts/martial4.png"
-                alt="Seven Star Praying Mantis"
-                class="project-details__showcase-img"
-                loading="lazy"
-              />
-            </div>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 2003-2015
-            </p>
-            <p class="project-details__desc-para">
-              I began training at Master A. Parapetti's school (a student of Master Shin Dae Woung),
-              practicing the Seven Star Praying Mantis style. The school later merged with that of
-              Master S. Falanga. I participated in several seminars with Grand Masters Zhong Lian Bao
-              and Lin Dongzhu.
-            </p>
-          </div>
-
-          <!-- Baguazhang Cheng Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Baguazhang Cheng Style (程氏八卦掌)</h3>
-            <div class="project-details__showcase-img-cont">
-              <img
-                src="./assets/martial-arts/martial3.png"
-                alt="Baguazhang Eight Trigrams Palm"
-                class="project-details__showcase-img"
-                loading="lazy"
-              />
-            </div>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 2010-2016
-            </p>
-            <p class="project-details__desc-para">
-              I practiced with Masters M. Ria and G. Capriglia, learning both a non-orthodox version
-              of the "Eight Trigrams" style and the orthodox Cheng style. I attended seminars with
-              Masters Kong Cheng and Han Yan Wu (students of Grand Master Liu Jing Ru).
-            </p>
-          </div>
-
-          <!-- Taichichuan Chen 2017-2019 Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Taichichuan Chen Style (陳式太極拳)</h3>
-            <div class="project-details__showcase-img-cont">
-              <img
-                src="./assets/martial-arts/martial1.png"
-                alt="Chen Style Taichichuan"
-                class="project-details__showcase-img"
-                loading="lazy"
-              />
-            </div>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 2017-2019
-            </p>
-            <p class="project-details__desc-para">
-              I trained with Master Gianna Sabatelli, a disciple of Grand Master Chen Xiaowang.
-            </p>
-          </div>
-
-          <!-- Baguazhang Yin Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Baguazhang Yin Style (尹氏八卦掌)</h3>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 2020
-            </p>
-            <p class="project-details__desc-para">
-              I studied with Master M. Ria, a disciple of Master Zhao Min Hua in the Yin style.
-            </p>
-          </div>
-
-          <!-- Taichichuan Chen 2023-2025 Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Kung Fu - Taichichuan Chen Style (陳式太極拳)</h3>
-            <p class="project-details__desc-para">
-              <strong>Period:</strong> Roma, 2023-2025
-            </p>
-            <p class="project-details__desc-para">
-              I currently train with Master Antonella Carrara, a student of Master Fu Neng Bin,
-              who is a disciple of Grand Master Chen ZhengLei.
-            </p>
-          </div>
-
-          <!-- Additional Interests Section -->
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Additional Interests and Training</h3>
-            <p class="project-details__desc-para">
-              Throughout the years, I have also explored Bajiquan (八極拳) and Wu Style Taijiquan (吳氏太極拳),
-              participating in training seminars with Masters Zu Yao Wu (for Bajiquan) and Zhao Min Hua
-              (for Taijiquan).
-            </p>
-          </div>
-
-          <div class="project-details__desc">
-            <h3 class="project-details__content-title">Philosophy and Practice</h3>
-            <p class="project-details__desc-para">
-              This journey through various martial arts has been more than physical training—it has been
-              a continuous exploration of discipline, balance, and the deep philosophical traditions of
-              the East. Each style has contributed unique perspectives on movement, strategy, and the
-              cultivation of both body and mind.
-            </p>
-          </div>
-
-          <div style="text-align: center; margin-top: 5rem;">
-            <a href="./index.html#about" class="btn btn--med btn--theme dynamicBgClr">
-              Back to About
-            </a>
+          <div class="nd-back-row">
+            <a href="index.html#about" class="nd-btn nd-btn--secondary">← Back to About</a>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </main>
 
-    <footer class="main-footer">
-      <div class="main-container">
-        <div class="main-footer__upper">
-          <div class="main-footer__row main-footer__row-1">
-            <h2 class="heading heading-sm main-footer__heading-sm">
-              <span>Social</span>
-            </h2>
-            <div class="main-footer__social-cont">
-              <a target="_blank" rel="noreferrer" href="#">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/linkedin-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://github.com/miyamotodan">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/github-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://x.com/miyamotodan">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/twitter-x-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://www.youtube.com/miyamotodan">
-                <img
-                  class="main-footer__icon"
-                  src="./assets/png/yt-ico.png"
-                  alt="icon"
-                />
-              </a>
-              <a target="_blank" rel="noreferrer" href="https://www.instagram.com/miyamotodan">
-                <img
-                  class="main-footer__icon main-footer__icon--mr-none"
-                  src="./assets/png/insta-ico.png"
-                  alt="icon"
-                />
-              </a>
-            </div>
-          </div>
-          <div class="main-footer__row main-footer__row-2">
-            <h4 class="heading heading-sm text-lt">Miyamotodan</h4>
-            <p class="main-footer__short-desc">
-              A SME and Team Leader with a passion for data-governance and data-integration.
-            </p>
-          </div>
+    <footer class="nd-footer">
+      <div class="nd-container nd-footer__inner">
+        <div>
+          <h4 class="nd-footer__heading">Miyamotodan</h4>
+          <p class="nd-footer__desc">
+            A SME and Team Leader with a passion for data-governance and data-integration.
+          </p>
         </div>
-
-        <div class="main-footer__lower">
-          &copy; Copyright 2021. Made by
-          <a rel="noreferrer" target="_blank" href="https://rammaheshwari.com"
-            >Ram Maheshwari</a
-          >
+        <div>
+          <h4 class="nd-footer__heading">Social</h4>
+          <ul class="nd-social" style="margin-top: 1rem;" aria-label="Social links">
+            <li>
+              <a href="https://www.linkedin.com/in/daniele-del-pinto-681025/" class="nd-social__link" aria-label="LinkedIn" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                  <rect width="4" height="12" x="2" y="9" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/miyamotodan" class="nd-social__link" aria-label="GitHub" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                  <path d="M9 18c-4.51 2-5-2-7-2" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/miyamotodan" class="nd-social__link" aria-label="X (Twitter)" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 5l14 14M19 5L5 19" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.youtube.com/miyamotodan" class="nd-social__link" aria-label="YouTube" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+                  <path d="m10 15 5-3-5-3z" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.instagram.com/miyamotodan" class="nd-social__link" aria-label="Instagram" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                </svg>
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
+      <p class="nd-footer__copy">&copy; 2026 Miyamotodan. Sketched with care.</p>
     </footer>
 
-    <script src="./index.js"></script>
+    <script src="js/main.js"></script>
   </body>
 </html>

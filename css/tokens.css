@@ -1,0 +1,52 @@
+/*
+  Design tokens — Hand-Drawn system.
+  Single source of truth for color, type, radius and shadow values.
+  Every component file below reads from these custom properties only —
+  never hardcode a hex/px value for these concerns in components.css.
+*/
+
+:root {
+  /* Color */
+  --color-bg: #fdfbf7; /* Warm Paper */
+  --color-fg: #2d2d2d; /* Soft Pencil Black */
+  --color-muted: #e5e0d8; /* Old Paper */
+  --color-muted-ink: #6b6558;
+  --color-accent: #ff4d4d; /* Red Correction Marker */
+  --color-accent-ink: #ffffff;
+  --color-accent-2: #2d5da1; /* Blue Ballpoint Pen */
+  --color-accent-2-ink: #ffffff;
+  --color-postit: #fff9c4;
+  --color-surface: #ffffff;
+  --color-border: #2d2d2d;
+
+  /* Type */
+  --font-heading: 'Kalam', cursive;
+  --font-body: 'Patrick Hand', cursive;
+
+  /* Wobbly radii — irregular so nothing reads as a machine-made rectangle/circle */
+  --radius-wobbly: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --radius-wobbly-alt: 225px 15px 255px 15px / 15px 255px 15px 225px;
+  --radius-wobbly-md: 30px 190px 30px 190px / 190px 30px 190px 30px;
+  --radius-wobbly-md-alt: 190px 30px 190px 30px / 30px 190px 30px 190px;
+  --radius-wobbly-sm: 18px 90px 18px 90px / 90px 18px 90px 18px;
+  --radius-wobbly-lg: 320px 20px 300px 20px / 20px 300px 20px 320px;
+  --radius-rough-circle: 48% 52% 51% 49% / 53% 47% 52% 48%;
+  --radius-rough-circle-alt: 52% 48% 49% 51% / 47% 53% 48% 52%;
+
+  /* Hard offset shadows — never blurred */
+  --shadow-sm: 2px 2px 0px 0px var(--color-border);
+  --shadow-md: 4px 4px 0px 0px var(--color-border);
+  --shadow-lg: 8px 8px 0px 0px var(--color-border);
+  --shadow-flat: 0px 0px 0px 0px var(--color-border);
+  --shadow-card: 3px 3px 0px 0px rgba(45, 45, 45, 0.12);
+
+  /* Layout */
+  --max-width: 68rem;
+  --max-width-narrow: 46rem;
+  --section-pad-y: clamp(3.5rem, 6vw, 5.5rem);
+  --bp-md: 768px;
+
+  /* Motion */
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-snap: 120ms;
+}
